@@ -1,0 +1,50 @@
+.div-style  {
+    text-align:center;
+}
+.tot-amount-style {
+    color:#3f51b5;
+    margin-top:-20px;
+}
+
+.square-green {
+    float: left;
+    width: 15px;
+    height: 15px;
+    margin: 3px;
+    border: 0px;
+    background: #00FF85;
+}
+
+.square-blue {
+    float: left;
+    width: 15px;
+    height: 15px;
+    margin: 3px;
+    border: 0px;
+    background: #0085FF;
+}
+
+
+.tot-fraud {
+    /*float: left;*/
+    /*margin-left:10px;*/
+
+}
+
+.t-align {
+    text-align:left !important;
+}
+
+.legend-name{
+    font-size: 16px;
+}
+
+.legend-amount{
+    font-size: 18px;
+    font-weight: bold;
+}
+
+.legend-count{
+    font-size: 14px;
+    color: #616161;
+}

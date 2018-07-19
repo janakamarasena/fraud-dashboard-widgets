@@ -1,0 +1,24 @@
+{
+    "name": "Average Transaction Amount",
+    "id": "AverageTransactionAmount",
+    "thumbnailURL": "",
+    "configs": {
+        "providerConfig": {
+            "configs": {
+                "type": "RDBMSBatchDataProvider",
+                "config": {
+                    "datasourceName": "TRA_DB",
+                    "queryData": {
+                        "query": "SELECT (select count(ID) from TransactionsHistory) as totCount, (select round(avg(amount), 2) from TransactionsHistory) as totAmount, (select count(ID) from TransactionsHistory where isSCAApplied =1) as scaCount, (select round(avg(amount), 2) from TransactionsHistory where isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where isSCAApplied =0) as exemptCount, (select round(avg(amount), 2) from TransactionsHistory where isSCAApplied =0) as exemptAmount FROM openbank_tra_db.TransactionsHistory limit 1 #"
+                    },
+                    "incrementalColumn": "ID",
+                    "publishingInterval": 300,
+                    "purgingInterval": 60,
+                    "publishingLimit": 1,
+                    "purgingLimit": 60,
+                    "isPurgingEnable": false
+                }
+            }
+        }
+    }
+}

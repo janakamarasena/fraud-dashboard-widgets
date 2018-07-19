@@ -1,0 +1,27 @@
+
+
+/*overriding mui*/
+/*.MuiTab-textColorPrimary-13.MuiTab-selected-15 {*/
+    /*color: #0A68EA !important;*/
+/*}*/
+
+/*.TabIndicator-colorPrimary-26 {*/
+    /*background-color: #0A68EA !important;*/
+/*}*/
+
+/*.MuiTab-textColorPrimary-13 {*/
+    /*color: #616161 !important;*/
+/*}*/
+
+/*.MuiTab-textColorPrimary.MuiTab-selected {*/
+    /*color: #0A68EA;*/
+/*}*/
+
+/*.MuiTab-textColorPrimary {*/
+    /*color: #616161 ;*/
+/*}*/
+
+.tab-margins{
+    margin-top: 1.67em !important;
+    margin-bottom: 0.67em !important;
+}
