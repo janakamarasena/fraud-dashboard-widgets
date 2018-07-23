@@ -38,7 +38,7 @@ class AverageTransactionAmountGraph extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
+        //console.log(data);
         this.setState({gData:data.data});
     }
 

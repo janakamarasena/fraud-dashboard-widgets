@@ -62,8 +62,8 @@ class TotalFraudulentTransactions extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
-        console.log(data.data[0]);
+        // console.log(data);
+        // console.log(data.data[0]);
         this.setState({tot:data.data[0].toString()});
         let nTotCount = data.data[0][6];
 
@@ -98,7 +98,7 @@ class TotalFraudulentTransactions extends Widget {
                 ]
             });
 
-            console.log(this.state.data);
+            // console.log(this.state.data);
         }
     }
 

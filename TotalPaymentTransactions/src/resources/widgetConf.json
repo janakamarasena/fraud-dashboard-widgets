@@ -9,10 +9,10 @@
                 "config": {
                     "datasourceName": "TRA_DB",
                     "queryData": {
-                        "query": "SELECT (select count(ID) from TransactionsHistory) as totCount, (select round(sum(amount), 2) from TransactionsHistory) as totAmount, (select count(ID) from TransactionsHistory where isSCAApplied =1) as scaCount, (select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where isSCAApplied =0) as exemptCount, (select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =0) as exemptAmount FROM openbank_tra_db.TransactionsHistory limit 1 #"
+                        "query": "SELECT (select count(ID) from TransactionsHistory where isSCAApplied =1) as scaCount, (select count(ID) from TransactionsHistory where isSCAApplied =1 and isFraud = 1) as scaFraudCount,(select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where isSCAApplied =0) as exemptCount, (select count(ID) from TransactionsHistory where isSCAApplied =0 and isFraud = 1) as exemptFraudCount,  (select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =0) as exemptAmount FROM openbank_tra_db.TransactionsHistory limit 1 #"
                     },
                     "incrementalColumn": "ID",
-                    "publishingInterval": 300,
+                    "publishingInterval": 10,
                     "purgingInterval": 60,
                     "publishingLimit": 1,
                     "purgingLimit": 60,

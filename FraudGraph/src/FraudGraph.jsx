@@ -55,7 +55,7 @@ class FraudGraph extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
+        //console.log(data);
         this.setState({gData:data.data});
     }
 
@@ -79,7 +79,6 @@ class FraudGraph extends Widget {
                         style:{strokeWidth:2,markRadius:5}
                     }
                 ],
-                maxLength: 7,
                 legend: true
             };
 

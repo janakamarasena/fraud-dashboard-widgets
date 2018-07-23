@@ -58,8 +58,8 @@ class AverageTransactionAmount extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
-        console.log(data.data[0]);
+        // console.log(data);
+        // console.log(data.data[0]);
         this.setState({tot:data.data[0].toString()});
         let nTotCount = data.data[0][0];
 
@@ -85,7 +85,7 @@ class AverageTransactionAmount extends Widget {
                 ]
             });
 
-            console.log(this.state.data);
+           // console.log(this.state.data);
         }
     }
 
