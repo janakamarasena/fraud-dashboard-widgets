@@ -10,7 +10,6 @@ const SCA = "SCA";
 const EXEMPTED = "EXEMPTED";
 
 //query columns
-const QC_TRA = 0;
 const QC_COUNT = 1;
 const QC_AMOUNT = 2;
 
@@ -118,7 +117,7 @@ class AverageTransactionAmount extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
+        //console.log(data);
         if (!this.state.isExemptDrillDownVisible && this.hasDataChanged(data.data)) {
             let nTotCount = data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT];
             let nTotAmount = data.data[QR_SCA][QC_AMOUNT] + data.data[QR_EXEMPT][QC_AMOUNT];
