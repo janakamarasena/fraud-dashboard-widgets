@@ -36,7 +36,6 @@ class TotalPaymentTransactions extends Widget {
             exemptFraudRate: 0,
             scaPercent: '0%',
             exemptPercent: '0%',
-            isExemptBreakDownHidden: true,
             isExemptDrillDownVisible: false,
             data:null,
             dataProviderConf: null,
@@ -50,21 +49,8 @@ class TotalPaymentTransactions extends Widget {
         };
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.handleResize = this.handleResize.bind(this);
+        this.toggleDrillDownView = this.toggleDrillDownView.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
-        this.tableConfig = {
-            charts: [
-                {
-                    type: "arc",
-                    x: "percent",
-                    color: "name",
-                    colorScale:["#00FF85","#0085FF"],
-                    mode: "donut"
-
-                }
-            ],
-            append: false,
-            legend: false
-        };
 
         this.tableConfig = {
             charts: [
@@ -153,7 +139,7 @@ class TotalPaymentTransactions extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
+        //console.log(data);
         if (!this.state.isExemptDrillDownVisible) {
             let nTotAmount = data.data[0][QC_SCA_AMOUNT] + data.data[0][QC_EXEMPT_AMOUNT];
             if (nTotAmount !== this.state.totAmount) {
@@ -204,11 +190,11 @@ class TotalPaymentTransactions extends Widget {
     }
 
     getPercent(val,totSCA, totExempted) {
-        return (val*100)/(totSCA+totExempted);
+        return this.roundToTwoDecimals((val*100)/(totSCA+totExempted));
     }
 
     getFraudRate(valFraud,valTot) {
-        return ((valFraud*100)/valTot).toFixed(2);
+        return this.roundToTwoDecimals((valFraud*100)/valTot);
     }
     
     getDrillDownExemptionAmount(data){
@@ -218,7 +204,7 @@ class TotalPaymentTransactions extends Widget {
             amount+=data[i][QC_DRILL_DOWN_EXEMPT_AMOUNT];
         }
 
-        return amount.toFixed(2);
+        return this.roundToTwoDecimals(amount);
     }
     
     getDrillDownExemptionCount(data){
@@ -238,7 +224,11 @@ class TotalPaymentTransactions extends Widget {
             percentage+=data[i][QC_DRILL_DOWN_EXEMPT_PERCENTAGE];
         }
 
-        return percentage.toFixed(2);
+        return this.roundToTwoDecimals(percentage);
+    }
+
+    roundToTwoDecimals(num){
+        return Math.round(num * 100) / 100
     }
 
     toggleDrillDownView(val){
@@ -304,7 +294,7 @@ class TotalPaymentTransactions extends Widget {
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                <Grid item xs={12} style={{marginTop:"-12px"}}>
+                                <Grid item xs={12} >
                                     <Grid container>
                                         <Grid item xs={2}>
                                             <div className="square-blue"></div>

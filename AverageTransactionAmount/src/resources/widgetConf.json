@@ -9,7 +9,7 @@
                 "config": {
                     "datasourceName": "TRA_DB",
                     "queryData": {
-                        "query": "SELECT (select count(ID) from TransactionsHistory) as totCount, (select round(avg(amount), 2) from TransactionsHistory) as totAmount, (select count(ID) from TransactionsHistory where isSCAApplied =1) as scaCount, (select round(avg(amount), 2) from TransactionsHistory where isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where isSCAApplied =0) as exemptCount, (select round(avg(amount), 2) from TransactionsHistory where isSCAApplied =0) as exemptAmount FROM openbank_tra_db.TransactionsHistory limit 1 #"
+                        "query": "select  IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra, count(ID) as count, sum(amount) as amount from TransactionsHistory group by tra order by tra desc #"
                     },
                     "incrementalColumn": "ID",
                     "publishingInterval": 300,

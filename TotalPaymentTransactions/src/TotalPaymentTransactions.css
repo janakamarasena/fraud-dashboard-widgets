@@ -59,9 +59,12 @@
 .click-tip{
     color: #5D6E77;
     font-size: 0.8em;
-    text-align: left;
-    margin-left: 20px;
-    margin-top: -20px;
+    /*text-align: left;*/
+    /*margin-left: 20px;*/
+    /*margin-top: -20px;*/
+    position: absolute;
+    bottom: 0;
+    left: 20px;
 }
 
 .info-tip{

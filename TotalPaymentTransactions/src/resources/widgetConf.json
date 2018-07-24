@@ -12,7 +12,7 @@
                         "query": "SELECT (select count(ID) from TransactionsHistory where isSCAApplied =1) as scaCount, (select count(ID) from TransactionsHistory where isSCAApplied =1 and isFraud = 1) as scaFraudCount,(select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where isSCAApplied =0) as exemptCount, (select count(ID) from TransactionsHistory where isSCAApplied =0 and isFraud = 1) as exemptFraudCount,  (select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =0) as exemptAmount FROM openbank_tra_db.TransactionsHistory limit 1 #"
                     },
                     "incrementalColumn": "ID",
-                    "publishingInterval": 10,
+                    "publishingInterval": 300,
                     "purgingInterval": 60,
                     "publishingLimit": 1,
                     "purgingLimit": 60,
