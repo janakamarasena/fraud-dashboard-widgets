@@ -1,0 +1,14 @@
+{
+    "name": "Date Time Range Picker",
+    "id": "DateTimeRangePicker",
+    "thumbnailURL": "",
+    "configs": {
+        "providerConfig": {
+            "configs": {
+                "pubsub": {
+                    "types": ["publisher"]
+                }
+            }
+        }
+    }
+}
