@@ -4,7 +4,7 @@ import './DateTimeRangePicker.css';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 
-
+//info/error messages
 const ERROR_NEGATIVE_DURATION = "*ERROR: start date/time cannot be greater than end date/time.";
 const ERROR_EXCEEDING_CURRENT_DATETIME = "*ERROR: filter date/time cannot exceed current date/time.";
 const ERROR_INVALID_DATETIME = "*ERROR: invalid date/time.";
@@ -30,26 +30,6 @@ class DateTimeRangePicker extends Widget {
         this.customFilter = this.customFilter.bind(this);
     }
 
-    /*getCurrentDate(){
-            let today = new Date();
-            let dd = today.getDate();
-            let MM = today.getMonth()+1; //January is 0!
-            let YYYY = today.getFullYear();
-            let hh= today.getHours();
-            let mm= today.getMinutes();
-
-            if(dd<10) {
-                dd = '0'+dd
-            }
-
-            if(MM<10) {
-                MM = '0'+MM
-            }
-
-            today = YYYY + '-' + MM + '-' + dd +'T'+hh+":"+mm;
-            return today;
-    }*/
-
     componentDidMount() {
       //  super.subscribe(this.setReceivedMsg);
         super.getWidgetConfiguration(this.props.widgetID)
@@ -65,35 +45,77 @@ class DateTimeRangePicker extends Widget {
         //console.log(data);
     }
 
-    buildMessage(period, type){
+    buildMessage(typeVal, startDT, endDT){
+        let type = "";
+        let period = "";
+        let conditionQuery ="";
 
+        switch(typeVal) {
+            case TYPE_DAYS:
+                type = "day";
+                period = "%d";
+                break;
+            case TYPE_MONTHS:
+                type = "month";
+                period = "%m";
+                break;
+            case TYPE_YEARS:
+                type = "year";
+                period = "%Y";
+        }
+
+        let periodQuery = "FROM_UNIXTIME(timestamp,'"+period+"')";
+
+        if (startDT && endDT) {
+            conditionQuery = "timestamp >= " + startDT + " and timestamp <= " + endDT;
+        } else {
+            conditionQuery = "FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90)";
+        }
+
+        return {"periodQuery":periodQuery,
+            "conditionQuery":conditionQuery,
+            "type":type
+            };
     }
 
     defaultFilter(){
-        console.log(this.state.startDateTime);
-        console.log(this.state.endDateTime);
-
         this.setState({ errorMsg: "",
             infoMsg:INFO,
             startDateTime: null,
             endDateTime: null,});
 
-        //super.publish("Initial Message");
+        let msg = this.buildMessage(TYPE_MONTHS);
+        super.publish(JSON.stringify(msg));
     }
 
     customFilter(){
-        let startDT = this.state.startDateTime;
-        let endDT = this.state.endDateTime;
+        let sDT = this.state.startDateTime;
+        let eDT = this.state.endDateTime;
 
-        console.log(startDT + " - " + endDT);
 
-        if (!this.isDateRangeValid(startDT, endDT)){
+        if (!this.isDateRangeValid(sDT, eDT)){
             return;
         }
 
+        let startDT = new Date(sDT);
+        let endDT = new Date(eDT);
 
+        let msg = "";
 
-        //super.publish("Initial Message");
+        if (startDT.getFullYear() === endDT.getFullYear()){
+            if (startDT.getMonth() === endDT.getMonth()) {
+                //days
+                msg = this.buildMessage(TYPE_DAYS, startDT.getTime(), endDT.getTime());
+            }else {
+                //months
+                msg = this.buildMessage(TYPE_MONTHS, startDT.getTime(), endDT.getTime());
+            }
+        }else {
+            //years
+            msg = this.buildMessage(TYPE_YEARS, startDT.getTime(), endDT.getTime());
+        }
+        // super.publish(msg);
+        super.publish(JSON.stringify(msg));
     }
 
     isDateRangeValid(sDT, eDT){

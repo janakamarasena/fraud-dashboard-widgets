@@ -3,12 +3,8 @@
     "id": "DateTimeRangePicker",
     "thumbnailURL": "",
     "configs": {
-        "providerConfig": {
-            "configs": {
-                "pubsub": {
-                    "types": ["publisher"]
-                }
-            }
+        "pubsub": {
+            "types": ["publisher"]
         }
     }
 }
