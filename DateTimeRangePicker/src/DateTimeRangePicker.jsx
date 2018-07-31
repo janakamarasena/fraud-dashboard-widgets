@@ -28,21 +28,18 @@ class DateTimeRangePicker extends Widget {
         };
         this.defaultFilter = this.defaultFilter.bind(this);
         this.customFilter = this.customFilter.bind(this);
+        this.setReceivedMsg = this.setReceivedMsg.bind(this);
     }
 
     componentDidMount() {
-      //  super.subscribe(this.setReceivedMsg);
-        super.getWidgetConfiguration(this.props.widgetID)
-            .then((message) => {
-                //super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, message.data.configs.providerConfig);
-            })
-            .catch((error) => {
-                console.log("error", error);
-            });
-
+        this.defaultFilter();
+        super.subscribe(this.setReceivedMsg);
     }
-    _handleDataReceived(data) {
-        //console.log(data);
+
+    setReceivedMsg(receivedMsg) {
+        if (receivedMsg === "init") {
+            this.defaultFilter();
+        }
     }
 
     buildMessage(typeVal, startDT, endDT){
@@ -85,7 +82,7 @@ class DateTimeRangePicker extends Widget {
             endDateTime: null,});
 
         let msg = this.buildMessage(TYPE_MONTHS);
-        super.publish(JSON.stringify(msg));
+        super.publish(msg);
     }
 
     customFilter(){
@@ -99,23 +96,23 @@ class DateTimeRangePicker extends Widget {
 
         let startDT = new Date(sDT);
         let endDT = new Date(eDT);
-
+        let startDTUNIX = Math.round(startDT.getTime() / 1000);
+        let endDTUNIX = Math.round(endDT.getTime() / 1000);
         let msg = "";
 
         if (startDT.getFullYear() === endDT.getFullYear()){
             if (startDT.getMonth() === endDT.getMonth()) {
                 //days
-                msg = this.buildMessage(TYPE_DAYS, startDT.getTime(), endDT.getTime());
+                msg = this.buildMessage(TYPE_DAYS, startDTUNIX, endDTUNIX);
             }else {
                 //months
-                msg = this.buildMessage(TYPE_MONTHS, startDT.getTime(), endDT.getTime());
+                msg = this.buildMessage(TYPE_MONTHS, startDTUNIX, endDTUNIX);
             }
         }else {
             //years
-            msg = this.buildMessage(TYPE_YEARS, startDT.getTime(), endDT.getTime());
+            msg = this.buildMessage(TYPE_YEARS, startDTUNIX, endDTUNIX);
         }
-        // super.publish(msg);
-        super.publish(JSON.stringify(msg));
+        super.publish(msg);
     }
 
     isDateRangeValid(sDT, eDT){

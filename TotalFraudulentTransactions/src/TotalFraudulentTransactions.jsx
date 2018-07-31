@@ -3,6 +3,7 @@ import Widget from '@wso2-dashboards/widget';
 import { VictoryPie } from 'victory';
 import Grid from '@material-ui/core/Grid';
 import './TotalFraudulentTransactions.css';
+import _ from 'lodash';
 
 
 //query columns
@@ -33,32 +34,51 @@ class TotalFraudulentTransactions extends Widget {
             drillDownData:null,
             mainVisibility:'flex',
             drillDownVisibility:'none',
-            width: this.props.glContainer.width,
-            height: this.props.glContainer.height
+            dataProviderConf: null,
+            isInitialized :false
 
         };
+        this.setReceivedMsg = this.setReceivedMsg.bind(this);
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.showDrillDownView = this.showDrillDownView.bind(this);
 
     }
 
     componentDidMount() {
-      //  super.subscribe(this.setReceivedMsg);
         super.getWidgetConfiguration(this.props.widgetID)
             .then((message) => {
-                super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, message.data.configs.providerConfig);
+                this.setState({
+                    dataProviderConf :  message.data.configs.providerConfig
+                });
+                super.subscribe(this.setReceivedMsg);
+                if (!this.state.isInitialized) {
+                    super.publish("init");
+                }
             })
             .catch((error) => {
                 console.log("error", error);
             });
-
     }
+
+    setReceivedMsg(receivedMsg) {
+        if (!this.state.isInitialized) {
+            this.setState({
+                isInitialized :  true
+            });
+        }
+        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, receivedMsg.conditionQuery);
+        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+    }
+
     _handleDataReceived(data) {
         //console.log(data);
         let nTotCount = data.data[0][QC_TOT_COUNT];
         if (nTotCount !== this.state.totCount){
+            let nSCAAmount = this.clean(data.data[0][QC_SCA_AMOUNT]);
+            let nExemptAmount = this.clean(data.data[0][QC_EXEMPT_AMOUNT]);
             let nFraudCount = data.data[0][QC_SCA_COUNT] + data.data[0][QC_EXEMPT_COUNT];
-            let nFraudAmount = this.roundToTwoDecimals(data.data[0][QC_SCA_AMOUNT] + data.data[0][QC_EXEMPT_AMOUNT]);
+            let nFraudAmount = this.roundToTwoDecimals(nSCAAmount + nExemptAmount);
             let nFraudPercent = this.getPercent(nFraudCount, nTotCount);
             let nSCAPercent =  this.getPercent(data.data[0][QC_SCA_COUNT],nFraudCount);
             let nSCAPercentFromTot =  this.getPercent(data.data[0][QC_SCA_COUNT],nTotCount);
@@ -70,9 +90,9 @@ class TotalFraudulentTransactions extends Widget {
                 fraudAmount: nFraudAmount,
                 fraudPercent:nFraudPercent,
                 scaCount: data.data[0][QC_SCA_COUNT],
-                scaAmount: data.data[0][QC_SCA_AMOUNT],
+                scaAmount: nSCAAmount,
                 exemptCount: data.data[0][QC_EXEMPT_COUNT],
-                exemptAmount: data.data[0][QC_EXEMPT_AMOUNT],
+                exemptAmount: nExemptAmount,
                 totCount: nTotCount,
                 scaPercent: nSCAPercent,
                 scaPercentFromTot: nSCAPercentFromTot,
@@ -104,7 +124,14 @@ class TotalFraudulentTransactions extends Widget {
     }
 
     getPercent(val,tot) {
+        if (!val || !tot){
+            return 0;
+        }
         return this.roundToTwoDecimals((val*100)/tot);
+    }
+
+    clean(val){
+        return val ? val : 0;
     }
 
     showDrillDownView(val){
