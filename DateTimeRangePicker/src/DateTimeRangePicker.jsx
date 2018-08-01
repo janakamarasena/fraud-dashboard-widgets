@@ -29,6 +29,7 @@ class DateTimeRangePicker extends Widget {
         this.defaultFilter = this.defaultFilter.bind(this);
         this.customFilter = this.customFilter.bind(this);
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
+        this.isDateRangeValid = this.isDateRangeValid.bind(this);
     }
 
     componentDidMount() {
@@ -77,9 +78,12 @@ class DateTimeRangePicker extends Widget {
 
     defaultFilter(){
         this.setState({ errorMsg: "",
+            infoMsg:INFO});
+
+        /*this.setState({ errorMsg: "",
             infoMsg:INFO,
             startDateTime: null,
-            endDateTime: null,});
+            endDateTime: null,});*/
 
         let msg = this.buildMessage(TYPE_MONTHS);
         super.publish(msg);
@@ -88,6 +92,7 @@ class DateTimeRangePicker extends Widget {
     customFilter(){
         let sDT = this.state.startDateTime;
         let eDT = this.state.endDateTime;
+        // console.log(sDT +"-"+ eDT);
 
 
         if (!this.isDateRangeValid(sDT, eDT)){
@@ -96,9 +101,15 @@ class DateTimeRangePicker extends Widget {
 
         let startDT = new Date(sDT);
         let endDT = new Date(eDT);
+        //console.log(startDT +"-"+ endDT);
+        // console.log((startDT/1000 | 0) +"-"+ (endDT/1000 | 0));
+        // console.log(startDT.getMilliseconds() +"-"+ endDT.getMilliseconds());
+        // console.log(startDT.getTime() +"-"+ endDT.getTime());
         let startDTUNIX = Math.round(startDT.getTime() / 1000);
         let endDTUNIX = Math.round(endDT.getTime() / 1000);
         let msg = "";
+
+        // console.log(startDTUNIX +"-"+ endDTUNIX);
 
         if (startDT.getFullYear() === endDT.getFullYear()){
             if (startDT.getMonth() === endDT.getMonth()) {
@@ -120,6 +131,7 @@ class DateTimeRangePicker extends Widget {
         if (!sDT || !eDT){
             this.setState({ errorMsg: ERROR_INVALID_DATETIME,
                 infoMsg:""});
+            console.log(sDT +"-date range invalid-"+ eDT);
             return false;
         }
 
@@ -156,7 +168,6 @@ class DateTimeRangePicker extends Widget {
                         id="datetime-local-start"
                         label="Start date/time"
                         type="datetime-local"
-                        defaultValue={this.state.startDateTime}
                         InputLabelProps={{
                             shrink: true,
                         }}
@@ -171,7 +182,6 @@ class DateTimeRangePicker extends Widget {
                         id="datetime-local-start"
                         label="End date/time"
                         type="datetime-local"
-                        defaultValue={this.state.endDateTime}
                         InputLabelProps={{
                             shrink: true,
                         }}

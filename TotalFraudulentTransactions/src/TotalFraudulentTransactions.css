@@ -75,3 +75,7 @@
     font-weight: lighter;
     cursor: pointer;
 }
+
+.tft-pointer g path{
+    cursor: pointer;
+}

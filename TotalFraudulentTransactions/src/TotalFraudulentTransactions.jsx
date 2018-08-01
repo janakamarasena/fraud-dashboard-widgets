@@ -38,6 +38,7 @@ class TotalFraudulentTransactions extends Widget {
             isInitialized :false
 
         };
+
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.showDrillDownView = this.showDrillDownView.bind(this);
@@ -72,18 +73,18 @@ class TotalFraudulentTransactions extends Widget {
     }
 
     _handleDataReceived(data) {
-        //console.log(data);
+        // console.log(data.data);
         let nTotCount = data.data[0][QC_TOT_COUNT];
         if (nTotCount !== this.state.totCount){
-            let nSCAAmount = this.clean(data.data[0][QC_SCA_AMOUNT]);
-            let nExemptAmount = this.clean(data.data[0][QC_EXEMPT_AMOUNT]);
+            let nSCAAmount = data.data[0][QC_SCA_AMOUNT];
+            let nExemptAmount = data.data[0][QC_EXEMPT_AMOUNT];
             let nFraudCount = data.data[0][QC_SCA_COUNT] + data.data[0][QC_EXEMPT_COUNT];
             let nFraudAmount = this.roundToTwoDecimals(nSCAAmount + nExemptAmount);
-            let nFraudPercent = this.getPercent(nFraudCount, nTotCount);
-            let nSCAPercent =  this.getPercent(data.data[0][QC_SCA_COUNT],nFraudCount);
-            let nSCAPercentFromTot =  this.getPercent(data.data[0][QC_SCA_COUNT],nTotCount);
-            let nExemptPercent = this.getPercent(data.data[0][QC_EXEMPT_COUNT],nFraudCount);
-            let nExemptPercentFromTot = this.getPercent(data.data[0][QC_EXEMPT_COUNT],nTotCount);
+            let nFraudPercent = this.getPercentage(nFraudCount, nTotCount);
+            let nSCAPercent =  this.getPercentage(data.data[0][QC_SCA_COUNT],nFraudCount);
+            let nSCAPercentFromTot =  this.getPercentage(data.data[0][QC_SCA_COUNT],nTotCount);
+            let nExemptPercent = this.getPercentage(data.data[0][QC_EXEMPT_COUNT],nFraudCount);
+            let nExemptPercentFromTot = this.getPercentage(data.data[0][QC_EXEMPT_COUNT],nTotCount);
             let nonFraudPercent = 100 - nFraudPercent;
             this.setState({
                 fraudCount: nFraudCount,
@@ -123,15 +124,11 @@ class TotalFraudulentTransactions extends Widget {
         }
     }
 
-    getPercent(val,tot) {
+    getPercentage(val,tot) {
         if (!val || !tot){
             return 0;
         }
         return this.roundToTwoDecimals((val*100)/tot);
-    }
-
-    clean(val){
-        return val ? val : 0;
     }
 
     showDrillDownView(val){
@@ -163,7 +160,7 @@ class TotalFraudulentTransactions extends Widget {
                 <br/>
                 <Grid container spacing={24} style={{display:this.state.mainVisibility}}>
                     <Grid item xs={12} >
-                        <svg viewBox="0 40 400 120" >
+                        <svg viewBox="0 40 400 120" className="tft-pointer">
                             <VictoryPie
                                 standalone={false}
                                 startAngle={90}

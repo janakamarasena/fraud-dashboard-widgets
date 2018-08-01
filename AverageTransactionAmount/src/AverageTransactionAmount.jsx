@@ -21,8 +21,8 @@ const QR_SCA = 0;
 const QR_EXEMPT = 1;
 
 //dynamic queries
-const MAIN_QUERY = "select  IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra, count(ID) as count, sum(amount) as amount from TransactionsHistory group by tra order by tra desc #";
-const DRILL_DOWN_QUERY ="select exemption, round(avg(amount),2) as amount from TransactionsHistory where isSCAApplied = 0 group by exemption #";
+const MAIN_QUERY = "select  IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra, count(ID) as count, sum(amount) as amount from TransactionsHistory where {{condition}} group by tra order by tra desc #";
+const DRILL_DOWN_QUERY ="select exemption, round(avg(amount),2) as amount from TransactionsHistory where {{condition}} and isSCAApplied = 0 group by exemption #";
 
 class AverageTransactionAmount extends Widget {
     constructor(props) {
@@ -41,31 +41,20 @@ class AverageTransactionAmount extends Widget {
             scaTotAmount:0,
             exemptTotAmount:0,
             dataProviderConf:null,
-            drillDownData:[]
+            drillDownData:[],
+            isInitialized :false,
+            dTRange:null
         };
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.hasDataChanged = this.hasDataChanged.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
         this.toggleDrillDownView = this.toggleDrillDownView.bind(this);
+        this.setReceivedMsg = this.setReceivedMsg.bind(this);
+        this.updateProviderConf = this.updateProviderConf.bind(this);
 
-        this.tableConfig = {
-            charts: [
-                {
-                    type: "arc",
-                    x: "percent",
-                    color: "name",
-                    colorScale:["#00FF85","#0085FF"],
-                    mode: "donut"
-
-                }
-            ],
-            append: false,
-            legend: false
-        };
 
         this.drillDownTableConfig  = {
-            x: "month",
             charts: [
                 {
                     type: "table",
@@ -102,6 +91,34 @@ class AverageTransactionAmount extends Widget {
         this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
+    setReceivedMsg(receivedMsg) {
+        // console.log(receivedMsg);
+
+        if (!this.state.isInitialized) {
+            this.setState({
+                isInitialized :  true
+            });
+        }
+        this.setState({
+            dTRange :  receivedMsg
+        });
+
+        this._handleDataReceived(-1);
+        this.updateProviderConf(this.state.isExemptDrillDownVisible, receivedMsg);
+    }
+
+    updateProviderConf(val, dTRange){
+        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        if (val===true) {
+            providerConfig.configs.config.queryData.query = DRILL_DOWN_QUERY;
+        }else {
+            providerConfig.configs.config.queryData.query = MAIN_QUERY;
+        }
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
+        // console.log(providerConfig.configs.config.queryData.query);
+        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+    }
+
     componentDidMount() {
       //  super.subscribe(this.setReceivedMsg);
         super.getWidgetConfiguration(this.props.widgetID)
@@ -109,7 +126,10 @@ class AverageTransactionAmount extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
-                super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, message.data.configs.providerConfig);
+                super.subscribe(this.setReceivedMsg);
+                if (!this.state.isInitialized) {
+                    super.publish("init");
+                }
             })
             .catch((error) => {
                 console.log("error", error);
@@ -117,16 +137,40 @@ class AverageTransactionAmount extends Widget {
 
     }
     _handleDataReceived(data) {
-        //console.log(data);
+        // console.log(data);
+        if (data === -1) {
+            this.setState({
+                totCount: 0,
+                totAmountAvg: 0,
+                scaAmountAvg: 0,
+                exemptAmountAvg: 0,
+                scaTotAmount:0,
+                exemptTotAmount:0,
+                scaPercent: 0,
+                exemptPercent: 0,
+                drillDownData: [[]],
+                data: [
+                    {
+                        x: 1,
+                        y: 0
+                    },
+                    {
+                        x: 2,
+                        y: 0
+                    }
+                ]
+            });
+            return;
+        }
         if (!this.state.isExemptDrillDownVisible && this.hasDataChanged(data.data)) {
             let nTotCount = data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT];
             let nTotAmount = data.data[QR_SCA][QC_AMOUNT] + data.data[QR_EXEMPT][QC_AMOUNT];
             let nTotAmountAvg = this.getAverage(nTotAmount, nTotCount);
             let nSCAAmountAvg = this.getAverage(data.data[QR_SCA][QC_AMOUNT], data.data[QR_SCA][QC_COUNT]);
             let nExemptAmountAvg = this.getAverage(data.data[QR_EXEMPT][QC_AMOUNT], data.data[QR_EXEMPT][QC_COUNT]);
-            let nSCAPercent = this.getPercent(data.data[QR_SCA][QC_COUNT],
+            let nSCAPercent = this.getPercentage(data.data[QR_SCA][QC_COUNT],
                 data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT]);
-            let nExemptPercent = this.getPercent(data.data[QR_EXEMPT][QC_COUNT],
+            let nExemptPercent = this.getPercentage(data.data[QR_EXEMPT][QC_COUNT],
                 data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT]);
             this.setState({
                 totCount: nTotCount,
@@ -174,11 +218,19 @@ class AverageTransactionAmount extends Widget {
         }
     }
 
-    getPercent(val,tot) {
+    getPercentage(val,tot) {
+        if (!val || !tot){
+            return 0;
+        }
+
         return this.roundToTwoDecimals((val*100)/tot);
     }
 
     getAverage(val, count){
+        if (!val || !count){
+            return 0;
+        }
+
         return this.roundToTwoDecimals(val/count);
     }
 
@@ -190,15 +242,7 @@ class AverageTransactionAmount extends Widget {
         this.setState({
             isExemptDrillDownVisible:val
         });
-
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
-        if (val===true) {
-            providerConfig.configs.config.queryData.query = DRILL_DOWN_QUERY;
-        }else {
-            providerConfig.configs.config.queryData.query = MAIN_QUERY;
-        }
-        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
-
+        this.updateProviderConf(val, this.state.dTRange);
     }
  
     render() {
@@ -209,7 +253,7 @@ class AverageTransactionAmount extends Widget {
                     <h1 style={{marginBottom:"76px"}}>£{this.state.totAmountAvg}</h1>
                     <Grid container spacing={24}>
                         <Grid item xs={7}>
-                            <svg viewBox="45 28 280 230" >
+                            <svg viewBox="45 28 280 230" className="pointer">
                                 <VictoryPie
                                     standalone={false}
                                     data={this.state.data}

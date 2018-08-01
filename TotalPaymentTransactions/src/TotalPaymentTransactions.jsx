@@ -4,6 +4,8 @@ import { VictoryPie, VictoryChart, VictoryLegend } from 'victory';
 import Grid from '@material-ui/core/Grid';
 import './TotalPaymentTransactions.css';
 import VizG from 'react-vizgrammar';
+import _ from 'lodash';
+
 
 //query columns
 const QC_SCA_COUNT = 0;
@@ -18,8 +20,8 @@ const QC_DRILL_DOWN_EXEMPT_COUNT = 2;
 const QC_DRILL_DOWN_EXEMPT_PERCENTAGE = 3;
 
 //dynamic queries
-const MAIN_QUERY = "SELECT (select count(ID) from TransactionsHistory where isSCAApplied =1) as scaCount, (select count(ID) from TransactionsHistory where isSCAApplied =1 and isFraud = 1) as scaFraudCount,(select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where isSCAApplied =0) as exemptCount, (select count(ID) from TransactionsHistory where isSCAApplied =0 and isFraud = 1) as exemptFraudCount,  (select round(sum(amount), 2) from TransactionsHistory where isSCAApplied =0) as exemptAmount FROM TransactionsHistory limit 1 #";
-const DRILL_DOWN_QUERY ="SELECT a.exemption, round(sum(amount),2) as amount, count(ID)as count, round(((select count(ID) from TransactionsHistory b where a.exemption=b.exemption  )*100)/(select count(ID) from TransactionsHistory limit 1),2) as percentage, round(((select count(ID) from TransactionsHistory b where a.exemption=b.exemption and  b.isFraud = 1 )*100)/(select count(ID) from TransactionsHistory limit 1),2) as rate FROM TransactionsHistory a where isSCAApplied = 0 group by exemption #";
+const MAIN_QUERY = "SELECT (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =1) as scaCount, (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =1 and isFraud = 1) as scaFraudCount,(select round(sum(amount), 2) from TransactionsHistory where {{condition}} and isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =0) as exemptCount, (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =0 and isFraud = 1) as exemptFraudCount,  (select round(sum(amount), 2) from TransactionsHistory where {{condition}} and isSCAApplied =0) as exemptAmount FROM TransactionsHistory limit 1 #";
+const DRILL_DOWN_QUERY ="SELECT a.exemption, round(sum(amount),2) as amount, count(ID)as count, round(((select count(ID) from TransactionsHistory b where {{condition}} and a.exemption=b.exemption  )*100)/(select count(ID) from TransactionsHistory where {{condition}} limit 1),2) as percentage, round(((select count(ID) from TransactionsHistory b where {{condition}} and a.exemption=b.exemption and  b.isFraud = 1 )*100)/(select count(ID) from TransactionsHistory where {{condition}} limit 1),2) as rate FROM TransactionsHistory a where {{condition}} and isSCAApplied = 0 group by exemption #";
 
 class TotalPaymentTransactions extends Widget {
     constructor(props) {
@@ -34,8 +36,8 @@ class TotalPaymentTransactions extends Widget {
             exemptCount: 0,
             exemptAmount: 0,
             exemptFraudRate: 0,
-            scaPercent: '0%',
-            exemptPercent: '0%',
+            scaPercent: 0,
+            exemptPercent: 0,
             isExemptDrillDownVisible: false,
             data:null,
             dataProviderConf: null,
@@ -44,31 +46,20 @@ class TotalPaymentTransactions extends Widget {
             drillDownData:[],
             drillDownExemptionAmount:0,
             drillDownExemptionCount:0,
-            drillDownExemptionPercentage:0
-
+            drillDownExemptionPercentage:0,
+            isInitialized :false,
+            dTRange:null
         };
+
+        this.setReceivedMsg = this.setReceivedMsg.bind(this);
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.toggleDrillDownView = this.toggleDrillDownView.bind(this);
+        this.updateProviderConf = this.updateProviderConf.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
 
-        this.tableConfig = {
-            charts: [
-                {
-                    type: "arc",
-                    x: "percent",
-                    color: "name",
-                    colorScale:["#00FF85","#0085FF"],
-                    mode: "donut"
-
-                }
-            ],
-            append: false,
-            legend: false
-        };
 
         this.drillDownTableConfig  = {
-            x: "month",
             charts: [
                 {
                     type: "table",
@@ -131,20 +122,39 @@ class TotalPaymentTransactions extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
-                super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, message.data.configs.providerConfig);
+                super.subscribe(this.setReceivedMsg);
+                if (!this.state.isInitialized) {
+                    super.publish("init");
+                }
             })
             .catch((error) => {
                 console.log("error", error);
             });
-
     }
+
+    setReceivedMsg(receivedMsg) {
+        if (!this.state.isInitialized) {
+            this.setState({
+                isInitialized :  true
+            });
+        }
+        this.setState({
+            dTRange :  receivedMsg
+        });
+        this._handleDataReceived(-1);
+        this.updateProviderConf(this.state.isExemptDrillDownVisible, receivedMsg);
+    }
+
     _handleDataReceived(data) {
-        //console.log(data);
+        // console.log(data);
         if (!this.state.isExemptDrillDownVisible) {
-            let nTotAmount = data.data[0][QC_SCA_AMOUNT] + data.data[0][QC_EXEMPT_AMOUNT];
+            if (data === -1) {
+                return;
+            }
+            let nTotAmount = this.roundToTwoDecimals(data.data[0][QC_SCA_AMOUNT] + data.data[0][QC_EXEMPT_AMOUNT]);
             if (nTotAmount !== this.state.totAmount) {
-                let nSCAPercent = this.getPercent(data.data[0][QC_SCA_COUNT], data.data[0][QC_SCA_COUNT], data.data[0][QC_EXEMPT_COUNT]);
-                let nExemptPercent = this.getPercent(data.data[0][QC_EXEMPT_COUNT], data.data[0][QC_SCA_COUNT], data.data[0][QC_EXEMPT_COUNT]);
+                let nSCAPercent = this.getPercentage(data.data[0][QC_SCA_COUNT], data.data[0][QC_SCA_COUNT], data.data[0][QC_EXEMPT_COUNT]);
+                let nExemptPercent = this.getPercentage(data.data[0][QC_EXEMPT_COUNT], data.data[0][QC_SCA_COUNT], data.data[0][QC_EXEMPT_COUNT]);
                 let nTotCount = data.data[0][QC_SCA_COUNT] + data.data[0][QC_EXEMPT_COUNT];
                 let nTotFraudRate = this.getFraudRate(data.data[0][QC_SCA_FRAUD_COUNT] + data.data[0][QC_EXEMPT_FRAUD_COUNT], nTotCount);
                 let nSCAFraudRate = this.getFraudRate(data.data[0][QC_SCA_FRAUD_COUNT], data.data[0][QC_SCA_COUNT]);
@@ -172,10 +182,22 @@ class TotalPaymentTransactions extends Widget {
                         }
                     ]
                 });
-
             }
         }else {
+            // console.log(data.data);
+            if (data === -1){
+                this.setState({
+                    drillDownData: [[]],
+                    drillDownExemptionAmount:0,
+                    drillDownExemptionCount:0,
+                    drillDownExemptionPercentage:0
+                });
+                return;
+            }
+
             let nDrillDownExemptionAmount = this.getDrillDownExemptionAmount(data.data);
+            // console.log("this.state.drillDownExemptionAmount: "+ this.state.drillDownExemptionAmount);
+            // console.log("nDrillDownExemptionAmount: "+ nDrillDownExemptionAmount);
             if (this.state.drillDownExemptionAmount !== nDrillDownExemptionAmount) {
                 let nDrillDownExemptionCount = this.getDrillDownExemptionCount(data.data);
                 let nDrillDownExemptionPercentage = this.getDrillDownExemptionPercentage(data.data);
@@ -189,11 +211,21 @@ class TotalPaymentTransactions extends Widget {
         }
     }
 
-    getPercent(val,totSCA, totExempted) {
-        return this.roundToTwoDecimals((val*100)/(totSCA+totExempted));
+    getPercentage(val,totSCA, totExempted) {
+        let tot = totSCA + totExempted;
+
+        if (!val || !tot){
+            return 0;
+        }
+
+        return this.roundToTwoDecimals((val*100)/tot);
     }
 
     getFraudRate(valFraud,valTot) {
+        if (!valFraud || !valTot){
+            return 0;
+        }
+
         return this.roundToTwoDecimals((valFraud*100)/valTot);
     }
     
@@ -235,19 +267,22 @@ class TotalPaymentTransactions extends Widget {
         this.setState({
             isExemptDrillDownVisible:val
         });
+        this.updateProviderConf(val, this.state.dTRange);
+    }
 
+    updateProviderConf(val, dTRange){
         let providerConfig = _.cloneDeep(this.state.dataProviderConf);
         if (val===true) {
             providerConfig.configs.config.queryData.query = DRILL_DOWN_QUERY;
         }else {
             providerConfig.configs.config.queryData.query = MAIN_QUERY;
         }
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
+        // console.log(providerConfig.configs.config.queryData.query);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
-
     }
 
     render() {
-
         return (
             <div>
                <div className="div-style" hidden={this.state.isExemptDrillDownVisible}>
@@ -259,7 +294,7 @@ class TotalPaymentTransactions extends Widget {
                     <br/>
                     <Grid container spacing={24}>
                         <Grid item xs={7}>
-                            <svg viewBox="45 28 280 230" >
+                            <svg viewBox="45 28 280 230" className="pointer" >
                                 <VictoryPie
                                     standalone={false}
                                     data={this.state.data}
