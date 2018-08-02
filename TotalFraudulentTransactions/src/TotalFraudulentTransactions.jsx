@@ -153,11 +153,8 @@ class TotalFraudulentTransactions extends Widget {
 
         return (
             <div  className="div-style">
-                <br/>
                 <h1>£{this.state.fraudAmount}</h1>
                 <h3 className="fraud-amount-style">{this.state.fraudCount} FRAUDS</h3>
-                <br/>
-                <br/>
                 <Grid container spacing={24} style={{display:this.state.mainVisibility}}>
                     <Grid item xs={12} >
                         <svg viewBox="0 40 400 120" className="tft-pointer">
@@ -186,9 +183,8 @@ class TotalFraudulentTransactions extends Widget {
                             * Click on the chart to get a drill down view.
                         </p>
                     </Grid>
-
                 </Grid>
-                <Grid container spacing={24} style={{display:this.state.drillDownVisibility}}>
+                <Grid container spacing={24} style={{display:this.state.drillDownVisibility, marginTop:"8px"}}>
                     <div onClick={() => this.showDrillDownView(false)} className="drill-down-close">&times;</div>
                     <Grid item xs={7}>
                         <svg viewBox="85 40 230 120" >

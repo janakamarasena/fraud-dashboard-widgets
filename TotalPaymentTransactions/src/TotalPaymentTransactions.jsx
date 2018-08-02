@@ -286,11 +286,9 @@ class TotalPaymentTransactions extends Widget {
         return (
             <div>
                <div className="div-style" hidden={this.state.isExemptDrillDownVisible}>
-                    <br/>
                     <h1>£{this.state.totAmount}</h1>
                     <h3 className="tot-amount-style">{this.state.totCount} TRANSACTIONS</h3>
                     <div className="fraud-rate">{this.state.totFraudRate}% (FRAUD RATE)</div>
-                    <br/>
                     <br/>
                     <Grid container spacing={24}>
                         <Grid item xs={7}>

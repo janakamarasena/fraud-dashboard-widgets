@@ -249,8 +249,7 @@ class AverageTransactionAmount extends Widget {
         return (
             <div>
                 <div  className="div-style" hidden={this.state.isExemptDrillDownVisible}>
-                    <br/>
-                    <h1 style={{marginBottom:"76px"}}>£{this.state.totAmountAvg}</h1>
+                    <h1 style={{marginBottom:"52px"}}>£{this.state.totAmountAvg}</h1>
                     <Grid container spacing={24}>
                         <Grid item xs={7}>
                             <svg viewBox="45 28 280 230" className="pointer">
