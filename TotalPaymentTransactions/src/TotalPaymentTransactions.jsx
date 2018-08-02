@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import Widget from '@wso2-dashboards/widget';
-import { VictoryPie, VictoryChart, VictoryLegend } from 'victory';
+import { VictoryPie } from 'victory';
 import Grid from '@material-ui/core/Grid';
 import './TotalPaymentTransactions.css';
 import VizG from 'react-vizgrammar';

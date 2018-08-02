@@ -20,6 +20,13 @@ const lightTheme = createMuiTheme({
     }
 });
 
+const QUERY_AMOUNT = "SELECT {{period}} as period, round(sum(amount), 2)  as amount, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} GROUP BY period, isSCAApplied order by period asc, tra desc #";
+const QUERY_COUNT = "SELECT {{period}} as period, count(*) as count, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} GROUP BY  period, isSCAApplied order by period asc, tra desc #";
+
+//TODO:: complex equals
+//TODO:: legend square
+//TODO:: show loading when query changes
+
 class TransactionGraph extends Widget {
     constructor(props) {
         super(props);
@@ -30,12 +37,16 @@ class TransactionGraph extends Widget {
             metadata: null,
             tableConfig:null,
             width: this.props.glContainer.width,
-            height: this.props.glContainer.height
+            height: this.props.glContainer.height,
+            isInitialized :false,
+            dTRange:null
         }
         ;
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.handleChange = this.handleChange.bind(this);
         this.handleResize = this.handleResize.bind(this);
+        this.setReceivedMsg = this.setReceivedMsg.bind(this);
+        this.updateWidgetConf = this.updateWidgetConf.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
     }
 
@@ -46,8 +57,10 @@ class TransactionGraph extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
-                this.handleChange(null,0);
-               // super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, message.data.configs.providerConfig);
+                super.subscribe(this.setReceivedMsg);
+                if (!this.state.isInitialized) {
+                    super.publish("init");
+                }
             })
             .catch((error) => {
                 console.log("error", error);
@@ -55,85 +68,84 @@ class TransactionGraph extends Widget {
 
     }
     _handleDataReceived(data) {
-        // console.log(data);
-        this.setState({gData:data.data});
+        console.log(data);
+
+        if (data === -1) {
+            this.setState({gData:[]});
+        }else {
+            this.setState({gData: data.data});
+        }
     }
 
     handleResize() {
         this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
-    handleChange (event, value){
-       // this.setState({ tValue:value });
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
-        if (value === 0) {
-            providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace("{{query1}}", "round(sum(amount), 2)  as amount");
-            let aTableConfig = {
-                x: "month",
-                charts: [
-                    {
-                        type: "line",
-                        y: "amount(£)",
-                        color: "tra",
-                        colorScale:["#00FF85","#0085FF"],
-                        style:{strokeWidth:2,markRadius:5}
-                    }
-                ],
-                maxLength: 7,
-                legend: true
-            };
-
-            let aMetadata = {
-                names: [
-                    "month",
-                    "amount(£)",
-                    "tra"
-                ],
-                types: [
-                    "ordinal",
-                    "linear",
-                    "ordinal"
-                ]
-            };
-            this.setState({ tableConfig:aTableConfig,
-                metadata:aMetadata,
-                tValue:value});
-        }else {
-            providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace("{{query1}}", "count(*) as count");
-
-            let aTableConfig = {
-                x: "month",
-                charts: [
-                    {
-                        type: "line",
-                        y: "count",
-                        color: "tra",
-                        colorScale:["#00FF85","#0085FF"],
-                        style:{strokeWidth:2,markRadius:5}
-                    }
-                ],
-                maxLength: 7,
-                legend: true
-            };
-
-            let aMetadata = {
-                names: [
-                    "month",
-                    "count",
-                    "tra"
-                ],
-                types: [
-                    "ordinal",
-                    "linear",
-                    "ordinal"
-                ]
-            };
-            this.setState({ tableConfig:aTableConfig,
-                metadata:aMetadata,
-                tValue:value});
+    setReceivedMsg(receivedMsg) {
+        if (!this.state.isInitialized) {
+            this.setState({
+                isInitialized :  true
+            });
         }
-        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+        this.setState({
+            dTRange :  receivedMsg
+        });
+        this._handleDataReceived(-1);
+        this.updateWidgetConf(this.state.tValue, receivedMsg);
+    }
+
+    handleChange (value){
+        this.setState({ tValue:value });
+        this.updateWidgetConf(value,this.state.dTRange);
     };
+
+    updateWidgetConf(value, dTRange){
+        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        let yAxis ="";
+        if (value === 0) {
+            providerConfig.configs.config.queryData.query = QUERY_AMOUNT;
+            yAxis = "amount(£)";
+        }else {
+            providerConfig.configs.config.queryData.query = QUERY_COUNT;
+            yAxis = "count";
+        }
+
+        let nTableConfig = {
+            x: dTRange.type,
+            charts: [
+                {
+                    type: "line",
+                    y: yAxis,
+                    color: "tra",
+                    colorScale:["#00FF85","#0085FF"],
+                    style:{strokeWidth:2,markRadius:5}
+                }
+            ],
+            append:false,
+            legend: true
+        };
+
+        let nMetadata = {
+            names: [
+                dTRange.type,
+                yAxis,
+                "tra"
+            ],
+            types: [
+                "ordinal",
+                "linear",
+                "ordinal"
+            ]
+        };
+        this.setState({ tableConfig:nTableConfig,
+            metadata:nMetadata});
+
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{period}}/g, dTRange.periodQuery);
+
+        console.log(providerConfig.configs.config.queryData.query);
+        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+    }
 
     render() {
         return (
@@ -146,7 +158,7 @@ class TransactionGraph extends Widget {
                     value={this.state.tValue}
                     indicatorColor="primary"
                     textColor="primary"
-                    onChange={this.handleChange}
+                    onChange={(e,v)=>this.handleChange(v)}
                     centered
                 >
                     <Tab label="AMOUNT" />
@@ -197,7 +209,4 @@ export const generateClassName = (rule, styleSheet) => {
 };
 global.dashboard.registerWidget('TransactionGraph', TransactionGraph);
 
-//TODO:: complex equals
-//TODO:: dynamic query
-//TODO:: legend square
-//TODO:: show loading when query changes
+

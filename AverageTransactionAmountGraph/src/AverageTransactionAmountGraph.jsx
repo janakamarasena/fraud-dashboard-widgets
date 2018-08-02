@@ -4,6 +4,10 @@ import './AverageTransactionAmountGraph.css';
 import VizG from 'react-vizgrammar';
 import _ from 'lodash';
 
+//TODO:: complex equals
+//TODO:: legend square
+//TODO:: show loading when query changes
+
 class AverageTransactionAmountGraph extends Widget {
     constructor(props) {
         super(props);
@@ -13,13 +17,15 @@ class AverageTransactionAmountGraph extends Widget {
             metadata: null,
             tableConfig:null,
             width: this.props.glContainer.width,
-            height: this.props.glContainer.height
-        }
-        ;
+            height: this.props.glContainer.height,
+            isInitialized :false
+        };
         this._handleDataReceived = this._handleDataReceived.bind(this);
-        this.handleChange = this.handleChange.bind(this);
+        this.updateWidgetConf = this.updateWidgetConf.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
+        this.setReceivedMsg = this.setReceivedMsg.bind(this);
+
     }
 
     componentDidMount() {
@@ -29,8 +35,10 @@ class AverageTransactionAmountGraph extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
-                this.handleChange(null,0);
-               // super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, message.data.configs.providerConfig);
+                super.subscribe(this.setReceivedMsg);
+                if (!this.state.isInitialized) {
+                    super.publish("init");
+                }
             })
             .catch((error) => {
                 console.log("error", error);
@@ -38,19 +46,33 @@ class AverageTransactionAmountGraph extends Widget {
 
     }
     _handleDataReceived(data) {
-        //console.log(data);
-        this.setState({gData:data.data});
+        // console.log(data);
+
+        if (data === -1) {
+            this.setState({gData:[]});
+        }else {
+            this.setState({gData: data.data});
+        }
     }
 
     handleResize() {
         this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
-    handleChange (event, value){
+    setReceivedMsg(receivedMsg) {
+        if (receivedMsg === "init") {
+            this.defaultFilter();
+        }
+
+        this._handleDataReceived(-1);
+        this.updateWidgetConf(receivedMsg)
+    }
+
+    updateWidgetConf (dTRange){
        // this.setState({ tValue:value });
         let providerConfig = _.cloneDeep(this.state.dataProviderConf);
-        let aTableConfig = {
-            x: "month",
+        let nTableConfig = {
+            x: dTRange.type,
             charts: [
                 {
                     type: "line",
@@ -60,13 +82,13 @@ class AverageTransactionAmountGraph extends Widget {
                     style:{strokeWidth:2,markRadius:5}
                 }
             ],
-            maxLength: 7,
+            append:false,
             legend: true
         };
 
-        let aMetadata = {
+        let nMetadata = {
             names: [
-                "month",
+                dTRange.type,
                 "amount(£)",
                 "tra"
             ],
@@ -76,8 +98,13 @@ class AverageTransactionAmountGraph extends Widget {
                 "ordinal"
             ]
         };
-        this.setState({ tableConfig:aTableConfig,
-            metadata:aMetadata});
+        this.setState({ tableConfig:nTableConfig,
+            metadata:nMetadata});
+
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{period}}/g, dTRange.periodQuery);
+
+        // console.log(providerConfig.configs.config.queryData.query);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
     };
 
@@ -100,7 +127,3 @@ class AverageTransactionAmountGraph extends Widget {
 
 global.dashboard.registerWidget('AverageTransactionAmountGraph', AverageTransactionAmountGraph);
 
-//TODO:: complex equals
-//TODO:: dynamic query
-//TODO:: legend square
-//TODO:: show loading when query changes

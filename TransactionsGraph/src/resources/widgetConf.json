@@ -3,13 +3,16 @@
     "id": "TransactionGraph",
     "thumbnailURL": "",
     "configs": {
+        "pubsub": {
+            "types": ["publisher","subscriber"]
+        },
         "providerConfig": {
             "configs": {
                 "type": "RDBMSBatchDataProvider",
                 "config": {
                     "datasourceName": "TRA_DB",
                     "queryData": {
-                        "query": "SELECT  FROM_UNIXTIME(timestamp,'%b') as month, {{query1}}, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90) GROUP BY  FROM_UNIXTIME(timestamp,'%b'), isSCAApplied order by month desc, tra desc #"
+                        "query": "SELECT 1"
                     },
                     "incrementalColumn": "ID",
                     "publishingInterval": 10,

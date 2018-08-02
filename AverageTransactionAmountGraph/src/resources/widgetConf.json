@@ -3,13 +3,16 @@
     "id": "AverageTransactionAmountGraph",
     "thumbnailURL": "",
     "configs": {
+        "pubsub": {
+            "types": ["publisher","subscriber"]
+        },
         "providerConfig": {
             "configs": {
                 "type": "RDBMSBatchDataProvider",
                 "config": {
                     "datasourceName": "TRA_DB",
                     "queryData": {
-                        "query": "SELECT FROM_UNIXTIME(timestamp,'%b') as month, round(avg(amount), 2)  as amount, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90) GROUP BY  FROM_UNIXTIME(timestamp,'%b'), isSCAApplied order by month desc, tra desc #"
+                        "query": "SELECT {{period}} as period, round(avg(amount), 2)  as amount, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} GROUP BY  period, isSCAApplied order by period asc, tra desc #"
                     },
                     "incrementalColumn": "ID",
                     "publishingInterval": 10,
