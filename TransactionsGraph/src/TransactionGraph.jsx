@@ -68,13 +68,21 @@ class TransactionGraph extends Widget {
 
     }
     _handleDataReceived(data) {
-        console.log(data);
+        // console.log(data);
+        // console.log("new new new");
+
 
         if (data === -1) {
             this.setState({gData:[]});
         }else {
-            this.setState({gData: data.data});
+            // let nData = this.convertDataToInt(data.data);
+            //console.log("ndata");
+           // console.log(nData);
+            this.setState({gData: this.convertDataToInt(data.data)});
+            // this.setState({gData: data.data});
         }
+
+        // this.setState({ gData: data === -1 ? [] : this.convertDataToInt(data.data)});
     }
 
     handleResize() {
@@ -132,7 +140,7 @@ class TransactionGraph extends Widget {
                 "tra"
             ],
             types: [
-                "ordinal",
+                "linear",
                 "linear",
                 "ordinal"
             ]
@@ -143,8 +151,16 @@ class TransactionGraph extends Widget {
         providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
         providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{period}}/g, dTRange.periodQuery);
 
-        console.log(providerConfig.configs.config.queryData.query);
+        // console.log(providerConfig.configs.config.queryData.query);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+    }
+
+    convertDataToInt(data){
+        for (let i = 0; i < data.length; i++) {
+             data[i][0] = parseInt(data[i][0]);
+        }
+
+        return data;
     }
 
     render() {
@@ -154,7 +170,6 @@ class TransactionGraph extends Widget {
                 <JssProvider generateClassName={generateClassName}>
                 <MuiThemeProvider theme={this.props.muiTheme.name === 'dark' ? darkTheme : lightTheme}>
                 <Tabs
-
                     value={this.state.tValue}
                     indicatorColor="primary"
                     textColor="primary"
@@ -172,13 +187,12 @@ class TransactionGraph extends Widget {
                     config={this.state.tableConfig}
                     metadata={this.state.metadata}
                     data={this.state.gData}
-                    height={this.props.glContainer.height - 75}
+                    height={this.props.glContainer.height -75}
                     width={this.props.glContainer.width + 100}
                 />
             </div>
         );
     }
-
 }
 
 

@@ -75,7 +75,7 @@ class FraudGraph extends Widget {
         if (data === -1) {
             this.setState({gData:[]});
         }else {
-            this.setState({gData: data.data});
+            this.setState({gData: this.convertDataToInt(data.data)});
         }
     }
 
@@ -136,7 +136,7 @@ class FraudGraph extends Widget {
                 "tra"
             ],
             types: [
-                "ordinal",
+                "linear",
                 "linear",
                 "ordinal"
             ]
@@ -149,6 +149,14 @@ class FraudGraph extends Widget {
 
         //console.log(providerConfig.configs.config.queryData.query);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+    }
+
+    convertDataToInt(data){
+        for (let i = 0; i < data.length; i++) {
+            data[i][0] = parseInt(data[i][0]);
+        }
+
+        return data;
     }
 
     render() {
