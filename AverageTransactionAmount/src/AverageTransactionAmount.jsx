@@ -1,3 +1,22 @@
+/*
+ *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
 import React, { Component } from 'react';
 import Widget from '@wso2-dashboards/widget';
 import { VictoryPie, VictoryChart, VictoryLegend } from 'victory';
@@ -9,21 +28,22 @@ import VizG from 'react-vizgrammar';
 const SCA = "SCA";
 const EXEMPTED = "EXEMPTED";
 
-//query columns
+//Query columns
 const QC_COUNT = 1;
 const QC_AMOUNT = 2;
-
 const QC_DRILL_DOWN_EXEMPT_AVG_AMOUNT = 1;
 
-
-//query rows
+//Query rows
 const QR_SCA = 0;
 const QR_EXEMPT = 1;
 
-//dynamic queries
+//Dynamic queries
 const MAIN_QUERY = "select  IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra, count(ID) as count, sum(amount) as amount from TransactionsHistory where {{condition}} group by tra order by tra desc #";
 const DRILL_DOWN_QUERY ="select exemption, round(avg(amount),2) as amount from TransactionsHistory where {{condition}} and isSCAApplied = 0 group by exemption #";
 
+/**
+ * Displays data related to average payment transaction amounts.
+ */
 class AverageTransactionAmount extends Widget {
     constructor(props) {
         super(props);
@@ -87,10 +107,16 @@ class AverageTransactionAmount extends Widget {
 
     }
 
+    /**
+     * Handles the resizing of a widget component.
+     */
     handleResize() {
         this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
+    /**
+     * Handles the message received from the DateTimeRangePicker widget.
+     */
     setReceivedMsg(receivedMsg) {
         // console.log(receivedMsg);
 
@@ -107,6 +133,9 @@ class AverageTransactionAmount extends Widget {
         this.updateProviderConf(this.state.isExemptDrillDownVisible, receivedMsg);
     }
 
+    /**
+     * Updates the providerConf of the widgetConf with a new SQL query.
+     */
     updateProviderConf(val, dTRange){
         let providerConfig = _.cloneDeep(this.state.dataProviderConf);
         if (val===true) {
@@ -126,8 +155,10 @@ class AverageTransactionAmount extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
+                //Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
+                    //Sends initialization message to the DateTimeRangePicker widget.
                     super.publish("init");
                 }
             })
@@ -136,6 +167,10 @@ class AverageTransactionAmount extends Widget {
             });
 
     }
+
+    /**
+     * Sets the state of the widget after receiving data from the provider.
+     */
     _handleDataReceived(data) {
         // console.log(data);
         if (data === -1) {
@@ -199,6 +234,9 @@ class AverageTransactionAmount extends Widget {
         }
     }
 
+    /**
+     * Checks whether the received provider data is equal to existing data.
+     */
     hasDataChanged(data){
         if (!this.state.isExemptDrillDownVisible) {
             if (this.state.scaTotAmount !== data[QR_SCA][QC_AMOUNT] ||
@@ -218,6 +256,9 @@ class AverageTransactionAmount extends Widget {
         }
     }
 
+    /**
+     * Calculates percentage values required for the widget.
+     */
     getPercentage(val,tot) {
         if (!val || !tot){
             return 0;
@@ -226,6 +267,9 @@ class AverageTransactionAmount extends Widget {
         return this.roundToTwoDecimals((val*100)/tot);
     }
 
+    /**
+     * Calculates average values required for the widget.
+     */
     getAverage(val, count){
         if (!val || !count){
             return 0;
@@ -234,10 +278,16 @@ class AverageTransactionAmount extends Widget {
         return this.roundToTwoDecimals(val/count);
     }
 
+    /**
+     * Rounds up a given number to two decimals.
+     */
     roundToTwoDecimals(num){
         return Math.round(num * 100) / 100
     }
 
+    /**
+     * Toggles the drill down view.
+     */
     toggleDrillDownView(val){
         this.setState({
             isExemptDrillDownVisible:val

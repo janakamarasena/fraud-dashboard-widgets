@@ -1,4 +1,23 @@
-import React, { Component } from 'react';
+/*
+ *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
+import React from 'react';
 import Widget from '@wso2-dashboards/widget';
 import { VictoryPie } from 'victory';
 import Grid from '@material-ui/core/Grid';
@@ -6,13 +25,16 @@ import './TotalFraudulentTransactions.css';
 import _ from 'lodash';
 
 
-//query columns
+//Query columns
 const QC_SCA_COUNT = 0;
 const QC_SCA_AMOUNT = 1;
 const QC_EXEMPT_COUNT = 2;
 const QC_EXEMPT_AMOUNT = 3;
 const QC_TOT_COUNT = 4;
 
+/**
+ * Displays data related to fraudulent payment transactions.
+ */
 class TotalFraudulentTransactions extends Widget {
     constructor(props) {
         super(props);
@@ -40,6 +62,7 @@ class TotalFraudulentTransactions extends Widget {
         };
 
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
+        this.updateProviderConf = this.updateProviderConf.bind(this);
         this._handleDataReceived = this._handleDataReceived.bind(this);
         this.showDrillDownView = this.showDrillDownView.bind(this);
 
@@ -51,8 +74,10 @@ class TotalFraudulentTransactions extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
+                //Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
+                    //Sends initialization message to the DateTimeRangePicker widget.
                     super.publish("init");
                 }
             })
@@ -61,17 +86,30 @@ class TotalFraudulentTransactions extends Widget {
             });
     }
 
+    /**
+     * Handles the message received from the DateTimeRangePicker widget.
+     */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
             this.setState({
                 isInitialized :  true
             });
         }
+        this.updateProviderConf(receivedMsg);
+    }
+
+    /**
+     * Updates the providerConf of the widgetConf with a new SQL query.
+     */
+    updateProviderConf(dTRange){
         let providerConfig = _.cloneDeep(this.state.dataProviderConf);
-        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, receivedMsg.conditionQuery);
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
     }
 
+    /**
+     * Sets the state of the widget after receiving data from the provider.
+     */
     _handleDataReceived(data) {
         // console.log(data.data);
         let nTotCount = data.data[0][QC_TOT_COUNT];
@@ -124,6 +162,9 @@ class TotalFraudulentTransactions extends Widget {
         }
     }
 
+    /**
+     * Calculates percentage values required for the widget.
+     */
     getPercentage(val,tot) {
         if (!val || !tot){
             return 0;
@@ -131,6 +172,9 @@ class TotalFraudulentTransactions extends Widget {
         return this.roundToTwoDecimals((val*100)/tot);
     }
 
+    /**
+     * Toggles the drill down view.
+     */
     showDrillDownView(val){
         if (val === true) {
             this.setState({
@@ -145,6 +189,9 @@ class TotalFraudulentTransactions extends Widget {
         }
     }
 
+    /**
+     * Rounds up a given number to two decimals.
+     */
     roundToTwoDecimals(num){
         return Math.round(num * 100) / 100
     }

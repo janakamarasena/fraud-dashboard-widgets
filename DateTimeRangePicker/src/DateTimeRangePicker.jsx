@@ -1,12 +1,31 @@
-import React, { Component } from 'react';
+/*
+ *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
+import React from 'react';
 import Widget from '@wso2-dashboards/widget';
 import './DateTimeRangePicker.css';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
-import {generateClassName} from "../../TransactionsGraph/src/TransactionGraph";
 import JssProvider from 'react-jss/lib/JssProvider';
 
-//info/error messages
+
+//info and error messages
 const ERROR_NEGATIVE_DURATION = "*ERROR: start date/time cannot be greater than end date/time.";
 const ERROR_EXCEEDING_CURRENT_DATETIME = "*ERROR: filter date/time cannot exceed current date/time.";
 const ERROR_INVALID_DATETIME = "*ERROR: invalid date/time.";
@@ -14,12 +33,14 @@ const INFO = "*Currently showing the past 90 days in real-time (filter not appli
 
 //types
 const TYPE_DAYS = 1;
-const TYPE_WEEKS = 2;
-const TYPE_MONTHS = 3;
-const TYPE_QUARTERS = 4;
-const TYPE_YEARS = 5;
+const TYPE_MONTHS = 2;
+const TYPE_YEARS = 3;
 
+/**
+ * Widget that provides the date and time filtering capability for other widgets.
+ */
 class DateTimeRangePicker extends Widget {
+
     constructor(props) {
         super(props);
         this.state = {
@@ -39,45 +60,19 @@ class DateTimeRangePicker extends Widget {
         super.subscribe(this.setReceivedMsg);
     }
 
+    /**
+     * Listens to other widgets initialize message.
+     */
     setReceivedMsg(receivedMsg) {
         if (receivedMsg === "init") {
             this.defaultFilter();
         }
     }
 
-    buildMessage(typeVal, startDT, endDT){
-        let type = "";
-        let period = "";
-        let conditionQuery ="";
-
-        switch(typeVal) {
-            case TYPE_DAYS:
-                type = "day";
-                period = "%d";
-                break;
-            case TYPE_MONTHS:
-                type = "month";
-                period = "%m";
-                break;
-            case TYPE_YEARS:
-                type = "year";
-                period = "%Y";
-        }
-
-        let periodQuery = "FROM_UNIXTIME(timestamp,'"+period+"')";
-
-        if (startDT && endDT) {
-            conditionQuery = "timestamp >= " + startDT + " and timestamp <= " + endDT;
-        } else {
-            conditionQuery = "FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90)";
-        }
-
-        return {"periodQuery":periodQuery,
-            "conditionQuery":conditionQuery,
-            "type":type
-            };
-    }
-
+    /**
+     * Creates a message to filter date time range for the past 90 days
+     * from the current time.
+     */
     defaultFilter(){
         this.setState({ errorMsg: "",
             infoMsg:INFO});
@@ -87,10 +82,13 @@ class DateTimeRangePicker extends Widget {
             startDateTime: null,
             endDateTime: null,});*/
 
-        let msg = this.buildMessage(TYPE_MONTHS);
+        let msg = DateTimeRangePicker.buildMessage(TYPE_MONTHS);
         super.publish(msg);
     }
 
+    /**
+     * Creates a message to filter date time range for given user input.
+     */
     customFilter(){
         let sDT = this.state.startDateTime;
         let eDT = this.state.endDateTime;
@@ -116,18 +114,21 @@ class DateTimeRangePicker extends Widget {
         if (startDT.getFullYear() === endDT.getFullYear()){
             if (startDT.getMonth() === endDT.getMonth()) {
                 //days
-                msg = this.buildMessage(TYPE_DAYS, startDTUNIX, endDTUNIX);
+                msg = DateTimeRangePicker.buildMessage(TYPE_DAYS, startDTUNIX, endDTUNIX);
             }else {
                 //months
-                msg = this.buildMessage(TYPE_MONTHS, startDTUNIX, endDTUNIX);
+                msg = DateTimeRangePicker.buildMessage(TYPE_MONTHS, startDTUNIX, endDTUNIX);
             }
         }else {
             //years
-            msg = this.buildMessage(TYPE_YEARS, startDTUNIX, endDTUNIX);
+            msg = DateTimeRangePicker.buildMessage(TYPE_YEARS, startDTUNIX, endDTUNIX);
         }
         super.publish(msg);
     }
 
+    /**
+     * Validates user input.
+     */
     isDateRangeValid(sDT, eDT){
 
         if (!sDT || !eDT){
@@ -159,11 +160,45 @@ class DateTimeRangePicker extends Widget {
         return true;
     }
 
+    /**
+     * Creates the publish message.
+     */
+    static buildMessage(typeVal, startDT, endDT){
+        let type = "";
+        let period = "";
+        let conditionQuery ="";
 
+        switch(typeVal) {
+            case TYPE_DAYS:
+                type = "day";
+                period = "%d";
+                break;
+            case TYPE_MONTHS:
+                type = "month";
+                period = "%m";
+                break;
+            case TYPE_YEARS:
+                type = "year";
+                period = "%Y";
+        }
+
+        let periodQuery = "FROM_UNIXTIME(timestamp,'"+period+"')";
+
+        if (startDT && endDT) {
+            conditionQuery = "timestamp >= " + startDT + " and timestamp <= " + endDT;
+        } else {
+            conditionQuery = "FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90)";
+        }
+
+        return {"periodQuery":periodQuery,
+            "conditionQuery":conditionQuery,
+            "type":type
+        };
+    }
  
     render() {
         return (
-            <JssProvider generateClassName={generateClassNameForDTRP}>
+            <JssProvider generateClassName={generateClassName}>
             <div>
                 <div className="date-time-container">
                     <TextField
@@ -172,21 +207,19 @@ class DateTimeRangePicker extends Widget {
                         label="Start date/time"
                         type="datetime-local"
                         InputLabelProps={{
-                            shrink: true,
+                            shrink: true
                         }}
                         value={this.state.startDateTime}
                         onChange={(e) => this.setState({ startDateTime: e.target.value})}
                     />
-
                     -
-
                     <TextField
                         className="date-time date-time-end"
                         id="datetime-local-start"
                         label="End date/time"
                         type="datetime-local"
                         InputLabelProps={{
-                            shrink: true,
+                            shrink: true
                         }}
                         value={this.state.endDateTime}
                         onChange={(e) => this.setState({ endDateTime: e.target.value})}
@@ -211,7 +244,7 @@ class DateTimeRangePicker extends Widget {
 const escapeRegex = /([[\].#*$><+~=|^:(),"'`\s])/g;
 let classCounter = 1000;
 
-export const generateClassNameForDTRP = (rule, styleSheet) => {
+export const generateClassName = (rule, styleSheet) => {
     classCounter += 1;
 
     if (process.env.NODE_ENV === 'production') {

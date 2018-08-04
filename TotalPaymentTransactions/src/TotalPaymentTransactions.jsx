@@ -1,4 +1,23 @@
-import React, { Component } from 'react';
+/*
+ *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
+import React from 'react';
 import Widget from '@wso2-dashboards/widget';
 import { VictoryPie } from 'victory';
 import Grid from '@material-ui/core/Grid';
@@ -7,22 +26,38 @@ import VizG from 'react-vizgrammar';
 import _ from 'lodash';
 
 
-//query columns
+//Query columns
 const QC_SCA_COUNT = 0;
 const QC_SCA_FRAUD_COUNT = 1;
 const QC_SCA_AMOUNT = 2;
 const QC_EXEMPT_COUNT = 3;
 const QC_EXEMPT_FRAUD_COUNT = 4;
 const QC_EXEMPT_AMOUNT = 5;
-
 const QC_DRILL_DOWN_EXEMPT_AMOUNT = 1;
 const QC_DRILL_DOWN_EXEMPT_COUNT = 2;
 const QC_DRILL_DOWN_EXEMPT_PERCENTAGE = 3;
 
-//dynamic queries
-const MAIN_QUERY = "SELECT (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =1) as scaCount, (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =1 and isFraud = 1) as scaFraudCount,(select round(sum(amount), 2) from TransactionsHistory where {{condition}} and isSCAApplied =1) as scaAmount, (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =0) as exemptCount, (select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =0 and isFraud = 1) as exemptFraudCount,  (select round(sum(amount), 2) from TransactionsHistory where {{condition}} and isSCAApplied =0) as exemptAmount FROM TransactionsHistory limit 1 #";
-const DRILL_DOWN_QUERY ="SELECT a.exemption, round(sum(amount),2) as amount, count(ID)as count, round(((select count(ID) from TransactionsHistory b where {{condition}} and a.exemption=b.exemption  )*100)/(select count(ID) from TransactionsHistory where {{condition}} limit 1),2) as percentage, round(((select count(ID) from TransactionsHistory b where {{condition}} and a.exemption=b.exemption and  b.isFraud = 1 )*100)/(select count(ID) from TransactionsHistory where {{condition}} limit 1),2) as rate FROM TransactionsHistory a where {{condition}} and isSCAApplied = 0 group by exemption #";
+//Dynamic queries
+const MAIN_QUERY = "SELECT " +
+    "(select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =1) as scaCount, " +
+    "(select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =1 and isFraud = 1) as scaFraudCount," +
+    "(select round(sum(amount), 2) from TransactionsHistory where {{condition}} and isSCAApplied =1) as scaAmount, " +
+    "(select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =0) as exemptCount, " +
+    "(select count(ID) from TransactionsHistory where {{condition}} and isSCAApplied =0 and isFraud = 1) as exemptFraudCount,  " +
+    "(select round(sum(amount), 2) from TransactionsHistory where {{condition}} and isSCAApplied =0) as exemptAmount " +
+    "FROM TransactionsHistory limit 1 #";
 
+const DRILL_DOWN_QUERY ="SELECT " +
+    "a.exemption, " +
+    "round(sum(amount),2) as amount, " +
+    "count(ID)as count, " +
+    "round(((select count(ID) from TransactionsHistory b where {{condition}} and a.exemption=b.exemption  )*100)/(select count(ID) from TransactionsHistory where {{condition}} limit 1),2) as percentage, " +
+    "round(((select count(ID) from TransactionsHistory b where {{condition}} and a.exemption=b.exemption and  b.isFraud = 1 )*100)/(select count(ID) from TransactionsHistory where {{condition}} limit 1),2) as rate " +
+    "FROM TransactionsHistory a where {{condition}} and isSCAApplied = 0 group by exemption #";
+
+/**
+ * Displays data related to payment transactions.
+ */
 class TotalPaymentTransactions extends Widget {
     constructor(props) {
         super(props);
@@ -110,6 +145,9 @@ class TotalPaymentTransactions extends Widget {
 
     }
 
+    /**
+     * Handles the resizing of a widget component.
+     */
     handleResize() {
         this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
@@ -122,8 +160,10 @@ class TotalPaymentTransactions extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
+                //Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
+                    //Sends initialization message to the DateTimeRangePicker widget.
                     super.publish("init");
                 }
             })
@@ -132,6 +172,9 @@ class TotalPaymentTransactions extends Widget {
             });
     }
 
+    /**
+     * Handles the message received from the DateTimeRangePicker widget.
+     */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
             this.setState({
@@ -141,10 +184,15 @@ class TotalPaymentTransactions extends Widget {
         this.setState({
             dTRange :  receivedMsg
         });
+
+        //removes data from the widget.
         this._handleDataReceived(-1);
         this.updateProviderConf(this.state.isExemptDrillDownVisible, receivedMsg);
     }
 
+    /**
+     * Sets the state of the widget after receiving data from the provider.
+     */
     _handleDataReceived(data) {
         // console.log(data);
         if (!this.state.isExemptDrillDownVisible) {
@@ -211,6 +259,9 @@ class TotalPaymentTransactions extends Widget {
         }
     }
 
+    /**
+     * Calculates percentage values required for the widget.
+     */
     getPercentage(val,totSCA, totExempted) {
         let tot = totSCA + totExempted;
 
@@ -221,6 +272,9 @@ class TotalPaymentTransactions extends Widget {
         return this.roundToTwoDecimals((val*100)/tot);
     }
 
+    /**
+     * Calculates fraud rate values required for the widget.
+     */
     getFraudRate(valFraud,valTot) {
         if (!valFraud || !valTot){
             return 0;
@@ -228,7 +282,10 @@ class TotalPaymentTransactions extends Widget {
 
         return this.roundToTwoDecimals((valFraud*100)/valTot);
     }
-    
+
+    /**
+     * Calculates the exemption amount required for the drill down view of the widget.
+     */
     getDrillDownExemptionAmount(data){
         let amount = 0;
 
@@ -238,7 +295,10 @@ class TotalPaymentTransactions extends Widget {
 
         return this.roundToTwoDecimals(amount);
     }
-    
+
+    /**
+     * Calculates the exemption count required for the drill down view of the widget.
+     */
     getDrillDownExemptionCount(data){
         let count = 0;
 
@@ -249,6 +309,9 @@ class TotalPaymentTransactions extends Widget {
         return count;
     }
 
+    /**
+     * Calculates the exemption percentage required for the drill down view of the widget.
+     */
     getDrillDownExemptionPercentage(data){
         let percentage = 0;
 
@@ -259,10 +322,16 @@ class TotalPaymentTransactions extends Widget {
         return this.roundToTwoDecimals(percentage);
     }
 
+    /**
+     * Rounds up a given number to two decimals.
+     */
     roundToTwoDecimals(num){
         return Math.round(num * 100) / 100
     }
 
+    /**
+     * Toggles the drill down view.
+     */
     toggleDrillDownView(val){
         this.setState({
             isExemptDrillDownVisible:val
@@ -270,6 +339,9 @@ class TotalPaymentTransactions extends Widget {
         this.updateProviderConf(val, this.state.dTRange);
     }
 
+    /**
+     * Updates the providerConf of the widgetConf with a new SQL query.
+     */
     updateProviderConf(val, dTRange){
         let providerConfig = _.cloneDeep(this.state.dataProviderConf);
         if (val===true) {

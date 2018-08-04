@@ -1,3 +1,22 @@
+/*
+ *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ *
+ *  WSO2 Inc. licenses this file to you under the Apache License,
+ *  Version 2.0 (the "License"); you may not use this file except
+ *  in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *  http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing,
+ *  software distributed under the License is distributed on an
+ *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
+ *  KIND, either express or implied.  See the License for the
+ *  specific language governing permissions and limitations
+ *  under the License.
+ *
+ */
+
 import React, { Component } from 'react';
 import Widget from '@wso2-dashboards/widget';
 import './TransactionGraph.css';
@@ -20,6 +39,7 @@ const lightTheme = createMuiTheme({
     }
 });
 
+//Dynamic queries
 const QUERY_AMOUNT = "SELECT {{period}} as period, round(sum(amount), 2)  as amount, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} GROUP BY period, isSCAApplied order by period asc, tra desc #";
 const QUERY_COUNT = "SELECT {{period}} as period, count(*) as count, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} GROUP BY  period, isSCAApplied order by period asc, tra desc #";
 
@@ -27,6 +47,9 @@ const QUERY_COUNT = "SELECT {{period}} as period, count(*) as count, IF(isSCAApp
 //TODO:: legend square
 //TODO:: show loading when query changes
 
+/**
+ * Displays graphs on payment transactions (Amounts and Counts) broken down as SCA and Exempted.
+ */
 class TransactionGraph extends Widget {
     constructor(props) {
         super(props);
@@ -57,8 +80,10 @@ class TransactionGraph extends Widget {
                 this.setState({
                     dataProviderConf :  message.data.configs.providerConfig
                 });
+                //Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
+                    //Sends initialization message to the DateTimeRangePicker widget.
                     super.publish("init");
                 }
             })
@@ -67,6 +92,10 @@ class TransactionGraph extends Widget {
             });
 
     }
+
+    /**
+     * Sets the state of the widget after receiving data from the provider.
+     */
     _handleDataReceived(data) {
         // console.log(data);
         // console.log("new new new");
@@ -85,10 +114,16 @@ class TransactionGraph extends Widget {
         // this.setState({ gData: data === -1 ? [] : this.convertDataToInt(data.data)});
     }
 
+    /**
+     * Handles the resizing of a widget component.
+     */
     handleResize() {
         this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
+    /**
+     * Handles the message received from the DateTimeRangePicker widget.
+     */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
             this.setState({
@@ -102,11 +137,18 @@ class TransactionGraph extends Widget {
         this.updateWidgetConf(this.state.tValue, receivedMsg);
     }
 
+    /**
+     * Toggles the view between Amount graph and Count graph.
+     */
     handleChange (value){
         this.setState({ tValue:value });
         this.updateWidgetConf(value,this.state.dTRange);
     };
 
+    /**
+     * Updates the providerConf of the widgetConf with a new SQL query.
+     * Updates the config and metadata of the charts with new axis data.
+     */
     updateWidgetConf(value, dTRange){
         let providerConfig = _.cloneDeep(this.state.dataProviderConf);
         let yAxis ="";
@@ -118,6 +160,7 @@ class TransactionGraph extends Widget {
             yAxis = "count";
         }
 
+//renameToChartConfig
         let nTableConfig = {
             x: dTRange.type,
             charts: [
@@ -155,6 +198,9 @@ class TransactionGraph extends Widget {
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
     }
 
+    /**
+     * Converts string data of the chart x-axis to integers.
+     */
     convertDataToInt(data){
         for (let i = 0; i < data.length; i++) {
              data[i][0] = parseInt(data[i][0]);
