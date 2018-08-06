@@ -17,49 +17,49 @@
  *
  */
 
-.date-time-start{
+.date-time-start {
     margin-right: 25px !important;
 }
 
-.date-time-end{
+.date-time-end {
     margin-left: 25px !important;
 }
 
-.date-time{
+.date-time {
     width: 230px;
 }
 
-.date-time-container{
+.date-time-container {
     margin: 10px;
     color: #5D6E77;
 }
 
-.date-time div, .date-time label{
+.date-time div, .date-time label {
     color: #5D6E77;
 }
 
-.date-time div:before{
-    border-bottom: 1px solid rgb(93, 110, 119)!important;
+.date-time div:before {
+    border-bottom: 1px solid rgb(93, 110, 119) !important;
 }
 
-.error-msg{
+.error-msg {
     color: #f44336;
     margin-left: 10px;
     font-size: 0.75em;
     margin-bottom: 10px;
 }
 
-.info-msg{
+.info-msg {
     color: #2196f3;
     margin-left: 10px;
     font-size: 0.75em;
     margin-bottom: 10px;
 }
 
-.btn-filter-custom{
+.btn-filter-custom {
     margin-left: 20px !important;
 }
 
-.btn-filter-default{
+.btn-filter-default {
     margin-left: 10px !important;
 }

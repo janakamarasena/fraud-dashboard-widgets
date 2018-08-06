@@ -17,12 +17,13 @@
  *
  */
 
-.div-style  {
-    text-align:center;
+.main-container {
+    text-align: center;
 }
+
 .tot-amount-style {
-    color:#0A68EA;
-    margin-top:-20px;
+    color: #0A68EA;
+    margin-top: -20px;
     margin-bottom: 0;
 }
 
@@ -31,7 +32,7 @@
     width: 15px;
     height: 15px;
     margin: 3px;
-    border: 0px;
+    border: 0;
     background: #00FF85;
 }
 
@@ -40,53 +41,47 @@
     width: 15px;
     height: 15px;
     margin: 3px;
-    border: 0px;
+    border: 0;
     background: #0085FF;
 }
 
-
-
-
 .t-align {
-    text-align:left !important;
+    text-align: left !important;
 }
 
-.legend-name{
+.legend-name {
     font-size: 16px;
 }
 
-.legend-amount{
+.legend-amount {
     font-size: 18px;
     font-weight: bold;
 }
 
-.legend-count{
+.legend-count {
     font-size: 16px;
     color: #455a64;
 }
 
-.legend-fraud-rate{
+.legend-fraud-rate {
     font-size: 12px;
     color: #5D6E77;
 }
 
-.fraud-rate{
+.fraud-rate {
     font-size: 14px;
     color: #5D6E77;
 }
 
-.click-tip{
+.click-tip {
     color: #5D6E77;
     font-size: 0.8em;
-    /*text-align: left;*/
-    /*margin-left: 20px;*/
-    /*margin-top: -20px;*/
     position: absolute;
     bottom: -4px;
     left: 20px;
 }
 
-.info-tip{
+.info-tip {
     color: #5D6E77;
     font-size: 0.7em;
     text-align: left;
@@ -94,7 +89,7 @@
     margin-top: 220px;
 }
 
-.drill-down-close{
+.drill-down-close {
     color: #5D6E77;
     font-size: 1.7em;
     top: 2px;
@@ -104,15 +99,14 @@
     cursor: pointer;
 }
 
-.drill-down-sub-title-1{
-    color:#0A68EA;
-    margin-top:-15px;
+.drill-down-sub-title-1 {
+    color: #0A68EA;
+    margin-top: -15px;
 }
 
-
-.drill-down-sub-title-2{
+.drill-down-sub-title-2 {
     color: #5D6E77;
-    margin-top:-15px;
+    margin-top: -15px;
     margin-bottom: -5px;
 }
 
@@ -126,6 +120,6 @@
     text-align: center !important;
 }
 
-.pointer g path:nth-child(2){
+.pointer g path:nth-child(2) {
     cursor: pointer;
 }

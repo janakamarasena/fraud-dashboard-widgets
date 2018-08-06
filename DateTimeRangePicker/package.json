@@ -12,10 +12,12 @@
         "react": "^16.4.1",
         "react-custom-scrollbars": "^4.2.1",
         "react-dom": "^16.4.1",
+        "rimraf": "^2.6.2",
         "style-loader": "^0.21.0",
         "date-fns": "2.0.0-alpha.7"
     },
     "scripts": {
+        "clean": "rimraf dist",
         "build": "webpack -p",
         "dev": "NODE_ENV=development webpack -d --config webpack.config.js --watch"
     },

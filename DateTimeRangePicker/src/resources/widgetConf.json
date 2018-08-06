@@ -4,7 +4,10 @@
     "thumbnailURL": "",
     "configs": {
         "pubsub": {
-            "types": ["publisher","subscriber"]
+            "types": [
+                "publisher",
+                "subscriber"
+            ]
         }
     }
 }

@@ -17,46 +17,39 @@
  *
  */
 
-import React, { Component } from 'react';
+import React from 'react';
 import Widget from '@wso2-dashboards/widget';
 import './AverageTransactionAmountGraph.css';
 import VizG from 'react-vizgrammar';
 import _ from 'lodash';
 
-//TODO:: complex equals
-//TODO:: legend square
-//TODO:: show loading when query changes
-
 /**
  * Displays a graph on average payment transaction amounts broken down as SCA and Exempted.
  */
 class AverageTransactionAmountGraph extends Widget {
+
     constructor(props) {
         super(props);
         this.state = {
             gData: [],
             dataProviderConf: null,
             metadata: null,
-            tableConfig:null,
+            chartConfig:null,
             width: this.props.glContainer.width,
             height: this.props.glContainer.height,
             isInitialized :false
         };
-        this._handleDataReceived = this._handleDataReceived.bind(this);
+        this.handleDataReceived = this.handleDataReceived.bind(this);
         this.updateWidgetConf = this.updateWidgetConf.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
-
     }
 
     componentDidMount() {
-      //  super.subscribe(this.setReceivedMsg);
         super.getWidgetConfiguration(this.props.widgetID)
             .then((message) => {
-                this.setState({
-                    dataProviderConf :  message.data.configs.providerConfig
-                });
+                this.setState({dataProviderConf :  message.data.configs.providerConfig});
                 //Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
@@ -67,27 +60,6 @@ class AverageTransactionAmountGraph extends Widget {
             .catch((error) => {
                 console.log("error", error);
             });
-
-    }
-
-    /**
-     * Sets the state of the widget after receiving data from the provider.
-     */
-    _handleDataReceived(data) {
-        // console.log(data);
-
-        if (data === -1) {
-            this.setState({gData:[]});
-        }else {
-            this.setState({gData: this.convertDataToInt(data.data)});
-        }
-    }
-
-    /**
-     * Handles the resizing of a widget component.
-     */
-    handleResize() {
-        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
     /**
@@ -97,8 +69,8 @@ class AverageTransactionAmountGraph extends Widget {
         if (receivedMsg === "init") {
             this.defaultFilter();
         }
-
-        this._handleDataReceived(-1);
+        //Removes data from the widget.
+        this.handleDataReceived(-1);
         this.updateWidgetConf(receivedMsg)
     }
 
@@ -107,10 +79,7 @@ class AverageTransactionAmountGraph extends Widget {
      * Updates the config and metadata of the charts with new axis data.
      */
     updateWidgetConf (dTRange){
-       // this.setState({ tValue:value });
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
-        //renameToChartConfig
-        let nTableConfig = {
+        let nChartConfig = {
             x: dTRange.type,
             charts: [
                 {
@@ -124,7 +93,6 @@ class AverageTransactionAmountGraph extends Widget {
             append:false,
             legend: true
         };
-
         let nMetadata = {
             names: [
                 dTRange.type,
@@ -137,33 +105,50 @@ class AverageTransactionAmountGraph extends Widget {
                 "ordinal"
             ]
         };
-        this.setState({ tableConfig:nTableConfig,
-            metadata:nMetadata});
-
-        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
-        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{period}}/g, dTRange.periodQuery);
-
-        // console.log(providerConfig.configs.config.queryData.query);
-        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+        this.setState({ chartConfig:nChartConfig, metadata:nMetadata});
+        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query
+            .replace(/{{condition}}/g, dTRange.conditionQuery)
+            .replace(/{{period}}/g, dTRange.periodQuery);
+        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this.handleDataReceived, providerConfig);
     };
+
+    /**
+     * Sets the state of the widget after receiving data from the provider.
+     */
+    handleDataReceived(data) {
+        // console.log(data);
+
+        if (data === -1) {
+            this.setState({gData:[]});
+        }else {
+            this.setState({gData: AverageTransactionAmountGraph.convertDataToInt(data.data)});
+        }
+    }
+
+    /**
+     * Handles the resizing of a widget component.
+     */
+    handleResize() {
+        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
+    }
 
     /**
      * Converts string data of the chart x-axis to integers.
      */
-    convertDataToInt(data){
+    static convertDataToInt(data){
         for (let i = 0; i < data.length; i++) {
             data[i][0] = parseInt(data[i][0]);
         }
-
         return data;
     }
 
     render() {
         return (
-            <div className="div-style-atag">
+            <div className="container-atag">
                 <br/>
                 <VizG
-                    config={this.state.tableConfig}
+                    config={this.state.chartConfig}
                     metadata={this.state.metadata}
                     data={this.state.gData}
                     height={this.props.glContainer.height - 75}
@@ -172,7 +157,6 @@ class AverageTransactionAmountGraph extends Widget {
             </div>
         );
     }
-
 }
 
 global.dashboard.registerWidget('AverageTransactionAmountGraph', AverageTransactionAmountGraph);

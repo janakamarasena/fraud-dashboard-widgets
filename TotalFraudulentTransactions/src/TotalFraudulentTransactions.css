@@ -17,12 +17,13 @@
  *
  */
 
-.div-style  {
-    text-align:center;
+.div-style {
+    text-align: center;
 }
+
 .fraud-amount-style {
-    color:#0A68EA;
-    margin-top:-20px;
+    color: #0A68EA;
+    margin-top: -20px;
 }
 
 .square-green {
@@ -30,7 +31,7 @@
     width: 15px;
     height: 15px;
     margin: 3px;
-    border: 0px;
+    border: 0;
     background: #00FF85;
 }
 
@@ -39,53 +40,46 @@
     width: 15px;
     height: 15px;
     margin: 3px;
-    border: 0px;
+    border: 0;
     background: #0085FF;
 }
 
-
 .tot-fraud {
-    /*float: left;*/
-    /*margin-left:10px;*/
     margin-top: 20px;
-
 }
 
 .t-align {
-    text-align:left !important;
+    text-align: left !important;
 }
 
-.legend-name{
+.legend-name {
     font-size: 16px;
 }
 
-.legend-amount{
+.legend-amount {
     font-size: 18px;
     font-weight: bold;
 }
 
-.legend-count{
+.legend-count {
     font-size: 14px;
     color: #616161;
 }
 
-.legend-percent-from-total{
+.legend-percent-from-total {
     font-size: 12px;
     color: #5D6E77;
 }
 
-.click-tip{
+.click-tip {
     color: #5D6E77;
     font-size: 0.8em;
-    /*text-align: left;*/
-    /*margin-left: 20px;*/
-    /*margin-top: -20px;*/
     position: absolute;
     bottom: -4px;
     left: 20px;
 }
 
-.drill-down-close{
+.drill-down-close {
     color: #5D6E77;
     font-size: 1.7em;
     top: 2px;
@@ -95,6 +89,6 @@
     cursor: pointer;
 }
 
-.tft-pointer g path{
+.tft-pointer g path {
     cursor: pointer;
 }

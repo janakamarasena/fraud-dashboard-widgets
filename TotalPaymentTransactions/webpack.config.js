@@ -20,7 +20,7 @@
 const path = require('path');
 const webpack = require('webpack');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
- 
+
 module.exports = {
     context: path.resolve(__dirname, './src'),
     entry: {
@@ -68,7 +68,7 @@ module.exports = {
                 test: /\.scss$/,
                 use: [{loader: 'style-loader'}, {loader: 'css-loader'}, {loader: 'sass-loader'}]
             }
- 
+
         ]
     },
     plugins: [

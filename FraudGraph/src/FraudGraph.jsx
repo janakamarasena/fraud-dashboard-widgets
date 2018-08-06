@@ -17,7 +17,7 @@
  *
  */
 
-import React, { Component } from 'react';
+import React from 'react';
 import Widget from '@wso2-dashboards/widget';
 import './FraudGraph.css';
 import VizG from 'react-vizgrammar';
@@ -40,12 +40,18 @@ const lightTheme = createMuiTheme({
 });
 
 //Dynamic queries
-const QUERY_AMOUNT = "SELECT {{period}} as period, round(sum(amount), 2) as amount, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} AND isFraud = 1 GROUP BY  period, isSCAApplied order by period asc, tra desc #";
-const QUERY_COUNT = "SELECT {{period}} as period, count(*) as count, IF(isSCAApplied =1, 'SCA', 'EXEMPTED') as tra FROM TransactionsHistory WHERE {{condition}} AND isFraud = 1 GROUP BY  period, isSCAApplied order by period asc, tra desc #";
-
-//TODO:: complex equals
-//TODO:: legend square
-//TODO:: show loading when query changes
+const QUERY_AMOUNT = "select " +
+    "{{period}} as period, " +
+    "round(sum(amount), 2) as amount, " +
+    "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra " +
+    "from TransactionsHistory where {{condition}} and isFraud = 1 " +
+    "group by  period, isSCAApplied order by period asc, tra desc #";
+const QUERY_COUNT = "select " +
+    "{{period}} as period, " +
+    "count(*) as count, " +
+    "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra " +
+    "from TransactionsHistory where {{condition}} and isFraud = 1 " +
+    "group by  period, isSCAApplied order by period asc, tra desc #";
 
 /**
  * Displays graphs on fraudulent payment transactions (Amounts and Counts) broken down as SCA and Exempted.
@@ -58,15 +64,14 @@ class FraudGraph extends Widget {
             tValue: 0,
             dataProviderConf: null,
             metadata: null,
-            tableConfig:null,
+            chartConfig: null,
             width: this.props.glContainer.width,
             height: this.props.glContainer.height,
-            isInitialized :false,
-            dTRange:null
+            isInitialized: false,
+            dTRange: null
         };
-
-        this._handleDataReceived = this._handleDataReceived.bind(this);
-        this.handleChange = this.handleChange.bind(this);
+        this.handleDataReceived = this.handleDataReceived.bind(this);
+        this.handleTabChange = this.handleTabChange.bind(this);
         this.handleResize = this.handleResize.bind(this);
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
         this.updateWidgetConf = this.updateWidgetConf.bind(this);
@@ -74,12 +79,9 @@ class FraudGraph extends Widget {
     }
 
     componentDidMount() {
-      //  super.subscribe(this.setReceivedMsg);
         super.getWidgetConfiguration(this.props.widgetID)
             .then((message) => {
-                this.setState({
-                    dataProviderConf :  message.data.configs.providerConfig
-                });
+                this.setState({dataProviderConf: message.data.configs.providerConfig});
                 //Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
@@ -90,27 +92,6 @@ class FraudGraph extends Widget {
             .catch((error) => {
                 console.log("error", error);
             });
-
-    }
-
-    /**
-     * Sets the state of the widget after receiving data from the provider.
-     */
-    _handleDataReceived(data) {
-        // console.log(data);
-
-        if (data === -1) {
-            this.setState({gData:[]});
-        }else {
-            this.setState({gData: this.convertDataToInt(data.data)});
-        }
-    }
-
-    /**
-     * Handles the resizing of a widget component.
-     */
-    handleResize() {
-        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
     }
 
     /**
@@ -118,56 +99,34 @@ class FraudGraph extends Widget {
      */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
-            this.setState({
-                isInitialized :  true
-            });
+            this.setState({isInitialized: true});
         }
-        this.setState({
-            dTRange :  receivedMsg
-        });
-        this._handleDataReceived(-1);
+        this.setState({dTRange: receivedMsg});
+        //Removes data from the widget.
+        this.handleDataReceived(-1);
         this.updateWidgetConf(this.state.tValue, receivedMsg);
     }
-
-    /**
-     * Toggles the view between Amount graph and Count graph.
-     */
-    handleChange (value){
-        this.setState({ tValue:value });
-        this.updateWidgetConf(value,this.state.dTRange);
-
-    };
 
     /**
      * Updates the providerConf of the widgetConf with a new SQL query.
      * Updates the config and metadata of the charts with new axis data.
      */
-    updateWidgetConf(value, dTRange){
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
-        let yAxis ="";
-        if (value === 0) {
-            providerConfig.configs.config.queryData.query = QUERY_AMOUNT;
-            yAxis = "amount(£)";
-        }else {
-            providerConfig.configs.config.queryData.query = QUERY_COUNT;
-            yAxis = "count";
-        }
-//renameToChartConfig
-        let nTableConfig = {
+    updateWidgetConf(value, dTRange) {
+        let yAxis = value === 0 ? "amount(£)" : "count";
+        let nChartConfig = {
             x: dTRange.type,
             charts: [
                 {
                     type: "line",
                     y: yAxis,
                     color: "tra",
-                    colorScale:["#00FF85","#0085FF"],
-                    style:{strokeWidth:2,markRadius:5}
+                    colorScale: ["#00FF85", "#0085FF"],
+                    style: {strokeWidth: 2, markRadius: 5}
                 }
             ],
-            append:false,
+            append: false,
             legend: true
         };
-
         let nMetadata = {
             names: [
                 dTRange.type,
@@ -180,24 +139,45 @@ class FraudGraph extends Widget {
                 "ordinal"
             ]
         };
-        this.setState({ tableConfig:nTableConfig,
-            metadata:nMetadata});
-
-        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
-        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query.replace(/{{period}}/g, dTRange.periodQuery);
-
-        //console.log(providerConfig.configs.config.queryData.query);
-        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this._handleDataReceived, providerConfig);
+        this.setState({chartConfig: nChartConfig, metadata: nMetadata});
+        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        providerConfig.configs.config.queryData.query = value === 0 ? QUERY_AMOUNT : QUERY_COUNT;
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query
+            .replace(/{{condition}}/g, dTRange.conditionQuery)
+            .replace(/{{period}}/g, dTRange.periodQuery);
+        super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this.handleDataReceived, providerConfig);
     }
+
+    /**
+     * Sets the state of the widget after receiving data from the provider.
+     */
+    handleDataReceived(data) {
+        this.setState({ gData: data === -1 ? [] : FraudGraph.convertDataToInt(data.data)});
+    }
+
+    /**
+     * Handles the resizing of a widget component.
+     */
+    handleResize() {
+        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
+    }
+
+    /**
+     * Toggles the view between Amount graph and Count graph.
+     */
+    handleTabChange(value) {
+        this.setState({tValue: value});
+        this.updateWidgetConf(value, this.state.dTRange);
+
+    };
 
     /**
      * Converts string data of the chart x-axis to integers.
      */
-    convertDataToInt(data){
+    static convertDataToInt(data) {
         for (let i = 0; i < data.length; i++) {
             data[i][0] = parseInt(data[i][0]);
         }
-
         return data;
     }
 
@@ -205,25 +185,24 @@ class FraudGraph extends Widget {
         return (
             <div>
                 <div className="tab-margins">
-                <JssProvider generateClassName={generateClassName}>
-                <MuiThemeProvider theme={this.props.muiTheme.name === 'dark' ? darkTheme : lightTheme}>
-                <Tabs
-
-                    value={this.state.tValue}
-                    indicatorColor="primary"
-                    textColor="primary"
-                    onChange={(e,v)=>this.handleChange(v)}
-                    centered
-                >
-                    <Tab label="AMOUNT" />
-                    <Tab label="COUNT"  />
-                </Tabs>
-                </MuiThemeProvider>
-                </JssProvider>
+                    <JssProvider generateClassName={generateClassName}>
+                        <MuiThemeProvider theme={this.props.muiTheme.name === 'dark' ? darkTheme : lightTheme}>
+                            <Tabs
+                                value={this.state.tValue}
+                                indicatorColor="primary"
+                                textColor="primary"
+                                onChange={(e, v) => this.handleTabChange(v)}
+                                centered
+                            >
+                                <Tab label="AMOUNT"/>
+                                <Tab label="COUNT"/>
+                            </Tabs>
+                        </MuiThemeProvider>
+                    </JssProvider>
                 </div>
                 <br/>
                 <VizG
-                    config={this.state.tableConfig}
+                    config={this.state.chartConfig}
                     metadata={this.state.metadata}
                     data={this.state.gData}
                     height={this.props.glContainer.height - 75}
@@ -235,32 +214,27 @@ class FraudGraph extends Widget {
 
 }
 
-
 //This is the workaround suggested in https://github.com/marmelab/react-admin/issues/1782
 const escapeRegex = /([[\].#*$><+~=|^:(),"'`\s])/g;
 let classCounter = 0;
 
 export const generateClassName = (rule, styleSheet) => {
     classCounter += 1;
-
     if (process.env.NODE_ENV === 'production') {
         return `c${classCounter}`;
     }
-
     if (styleSheet && styleSheet.options.classNamePrefix) {
         let prefix = styleSheet.options.classNamePrefix;
         // Sanitize the string as will be used to prefix the generated class name.
         prefix = prefix.replace(escapeRegex, '-');
-
         if (prefix.match(/^Mui/)) {
             return `${prefix}-${rule.key}`;
         }
-
         return `${prefix}-${rule.key}-${classCounter}`;
     }
-
     return `${rule.key}-${classCounter}`;
 };
+
 global.dashboard.registerWidget('FraudGraph', FraudGraph);
 
 
