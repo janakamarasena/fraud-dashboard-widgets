@@ -24,37 +24,36 @@ import VizG from 'react-vizgrammar';
 import _ from 'lodash';
 import Tabs from '@material-ui/core/Tabs';
 import Tab from '@material-ui/core/Tab';
-import {MuiThemeProvider, createMuiTheme} from '@material-ui/core/styles';
+import { MuiThemeProvider, createMuiTheme } from '@material-ui/core/styles';
 import JssProvider from 'react-jss/lib/JssProvider';
 
 const darkTheme = createMuiTheme({
     palette: {
-        type: "dark"
-    }
+        type: 'dark',
+    },
 });
 
 const lightTheme = createMuiTheme({
     palette: {
-        type: "light"
-    }
+        type: 'light',
+    },
 });
 
-//Dynamic queries
-const QUERY_AMOUNT = "select " +
-    "{{period}} as period, " +
-    "round(sum(amount), 2)  as amount, " +
-    "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra " +
-    "from TransactionsHistory where {{condition}} group by period, isSCAApplied order by period asc, tra desc #";
-const QUERY_COUNT = "select {{period}} as period, " +
-    "count(*) as count, " +
-    "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra " +
-    "from TransactionsHistory where {{condition}} group by  period, isSCAApplied order by period asc, tra desc #";
+// Dynamic queries
+const QUERY_AMOUNT = 'select '
+    + '{{period}} as period, '
+    + 'round(sum(amount), 2)  as amount, '
+    + 'if(isSCAApplied = 1, "SCA", "EXEMPTED") as tra '
+    + 'from TransactionsHistory where {{condition}} group by period, isSCAApplied order by period asc, tra desc #';
+const QUERY_COUNT = 'select {{period}} as period, '
+    + 'count(*) as count, '
+    + "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra "
+    + 'from TransactionsHistory where {{condition}} group by  period, isSCAApplied order by period asc, tra desc #';
 
 /**
  * Displays graphs on payment transactions (Amounts and Counts) broken down as SCA and Exempted.
  */
 class TransactionGraph extends Widget {
-
     constructor(props) {
         super(props);
         this.state = {
@@ -66,7 +65,7 @@ class TransactionGraph extends Widget {
             width: this.props.glContainer.width,
             height: this.props.glContainer.height,
             isInitialized: false,
-            dTRange: null
+            dTRange: null,
         };
         this.handleDataReceived = this.handleDataReceived.bind(this);
         this.handleTabChange = this.handleTabChange.bind(this);
@@ -79,16 +78,16 @@ class TransactionGraph extends Widget {
     componentDidMount() {
         super.getWidgetConfiguration(this.props.widgetID)
             .then((message) => {
-                this.setState({dataProviderConf: message.data.configs.providerConfig});
-                //Subscribes to the DateTimeRangePicker widget.
+                this.setState({ dataProviderConf: message.data.configs.providerConfig });
+                // Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
-                    //Sends initialization message to the DateTimeRangePicker widget.
-                    super.publish("init");
+                    // Sends initialization message to the DateTimeRangePicker widget.
+                    super.publish('init');
                 }
             })
             .catch((error) => {
-                console.log("error", error);
+                console.log('error', error);
             });
     }
 
@@ -97,10 +96,10 @@ class TransactionGraph extends Widget {
      */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
-            this.setState({isInitialized: true});
+            this.setState({ isInitialized: true });
         }
-        this.setState({dTRange: receivedMsg});
-        //Removes data from the widget.
+        this.setState({ dTRange: receivedMsg });
+        // Removes data from the widget.
         this.handleDataReceived(-1);
         this.updateWidgetConf(this.state.tValue, receivedMsg);
     }
@@ -110,35 +109,35 @@ class TransactionGraph extends Widget {
      * Updates the config and metadata of the charts with new axis data.
      */
     updateWidgetConf(value, dTRange) {
-        let yAxis = value === 0 ? "amount(£)" : "count";
-        let nChartConfig = {
+        const yAxis = value === 0 ? 'amount(£)' : 'count';
+        const nChartConfig = {
             x: dTRange.type,
             charts: [
                 {
-                    type: "line",
+                    type: 'line',
                     y: yAxis,
-                    color: "tra",
-                    colorScale: ["#00FF85", "#0085FF"],
-                    style: {strokeWidth: 2, markRadius: 5}
-                }
+                    color: 'tra',
+                    colorScale: ['#00FF85', '#0085FF'],
+                    style: { strokeWidth: 2, markRadius: 5 },
+                },
             ],
             append: false,
-            legend: true
+            legend: true,
         };
-        let nMetadata = {
+        const nMetadata = {
             names: [
                 dTRange.type,
                 yAxis,
-                "tra"
+                'tra',
             ],
             types: [
-                "linear",
-                "linear",
-                "ordinal"
-            ]
+                'linear',
+                'linear',
+                'ordinal',
+            ],
         };
-        this.setState({chartConfig: nChartConfig, metadata: nMetadata});
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        this.setState({ chartConfig: nChartConfig, metadata: nMetadata });
+        const providerConfig = _.cloneDeep(this.state.dataProviderConf);
         providerConfig.configs.config.queryData.query = value === 0 ? QUERY_AMOUNT : QUERY_COUNT;
         providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query
             .replace(/{{condition}}/g, dTRange.conditionQuery)
@@ -150,30 +149,30 @@ class TransactionGraph extends Widget {
      * Sets the state of the widget after receiving data from the provider.
      */
     handleDataReceived(data) {
-        this.setState({gData: data === -1 ? [] : TransactionGraph.convertDataToInt(data.data)});
+        this.setState({ gData: data === -1 ? [] : TransactionGraph.convertDataToInt(data.data) });
     }
 
     /**
      * Handles the resizing of a widget component.
      */
     handleResize() {
-        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
+        this.setState({ width: this.props.glContainer.width, height: this.props.glContainer.height });
     }
 
     /**
      * Toggles the view between Amount graph and Count graph.
      */
     handleTabChange(value) {
-        this.setState({tValue: value});
+        this.setState({ tValue: value });
         this.updateWidgetConf(value, this.state.dTRange);
-    };
+    }
 
     /**
      * Converts string data of the chart x-axis to integers.
      */
     static convertDataToInt(data) {
         for (let i = 0; i < data.length; i++) {
-            data[i][0] = parseInt(data[i][0]);
+            data[i][0] = parseInt(data[i][0], 10);
         }
         return data;
     }
@@ -191,13 +190,13 @@ class TransactionGraph extends Widget {
                                 onChange={(e, v) => this.handleTabChange(v)}
                                 centered
                             >
-                                <Tab label="AMOUNT"/>
-                                <Tab label="COUNT"/>
+                                <Tab label="AMOUNT" />
+                                <Tab label="COUNT" />
                             </Tabs>
                         </MuiThemeProvider>
                     </JssProvider>
                 </div>
-                <br/>
+                <br />
                 <VizG
                     config={this.state.chartConfig}
                     metadata={this.state.metadata}
@@ -210,7 +209,7 @@ class TransactionGraph extends Widget {
     }
 }
 
-//This is the workaround suggested in https://github.com/marmelab/react-admin/issues/1782
+// This is the workaround suggested in https://github.com/marmelab/react-admin/issues/1782
 const escapeRegex = /([[\].#*$><+~=|^:(),"'`\s])/g;
 let classCounter = 0;
 
@@ -232,5 +231,3 @@ export const generateClassName = (rule, styleSheet) => {
 };
 
 global.dashboard.registerWidget('TransactionGraph', TransactionGraph);
-
-

@@ -24,13 +24,13 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import JssProvider from 'react-jss/lib/JssProvider';
 
-//info and error messages
-const ERROR_NEGATIVE_DURATION = "*ERROR: start date/time cannot be greater than end date/time.";
-const ERROR_EXCEEDING_CURRENT_DATETIME = "*ERROR: filter date/time cannot exceed current date/time.";
-const ERROR_INVALID_DATETIME = "*ERROR: invalid date/time.";
-const INFO = "*Currently showing the past 90 days in real-time (filter not applied).";
+// Info and error messages
+const ERROR_NEGATIVE_DURATION = '*ERROR: start date/time cannot be greater than end date/time.';
+const ERROR_EXCEEDING_CURRENT_DATETIME = '*ERROR: filter date/time cannot exceed current date/time.';
+const ERROR_INVALID_DATETIME = '*ERROR: invalid date/time.';
+const INFO = '*Currently showing the past 90 days in real-time (filter not applied).';
 
-//types
+// Types
 const TYPE_DAYS = 1;
 const TYPE_MONTHS = 2;
 const TYPE_YEARS = 3;
@@ -39,14 +39,13 @@ const TYPE_YEARS = 3;
  * Widget that provides the date and time filtering capability for other widgets.
  */
 class DateTimeRangePicker extends Widget {
-
     constructor(props) {
         super(props);
         this.state = {
             startDateTime: null,
             endDateTime: null,
-            errorMsg: "",
-            infoMsg: INFO
+            errorMsg: '',
+            infoMsg: INFO,
         };
         this.defaultFilter = this.defaultFilter.bind(this);
         this.customFilter = this.customFilter.bind(this);
@@ -63,7 +62,7 @@ class DateTimeRangePicker extends Widget {
      * Listens to other widgets initialize message.
      */
     setReceivedMsg(receivedMsg) {
-        if (receivedMsg === "init") {
+        if (receivedMsg === 'init') {
             this.defaultFilter();
         }
     }
@@ -73,8 +72,8 @@ class DateTimeRangePicker extends Widget {
      * from the current time.
      */
     defaultFilter() {
-        this.setState({errorMsg: "", infoMsg: INFO});
-        let msg = DateTimeRangePicker.buildMessage(TYPE_MONTHS);
+        this.setState({ errorMsg: '', infoMsg: INFO });
+        const msg = DateTimeRangePicker.buildMessage(TYPE_MONTHS);
         super.publish(msg);
     }
 
@@ -82,26 +81,26 @@ class DateTimeRangePicker extends Widget {
      * Creates a message to filter date time range for given user input.
      */
     customFilter() {
-        let sDT = this.state.startDateTime;
-        let eDT = this.state.endDateTime;
+        const sDT = this.state.startDateTime;
+        const eDT = this.state.endDateTime;
         if (!this.isDateRangeValid(sDT, eDT)) {
             return;
         }
-        let startDT = new Date(sDT);
-        let endDT = new Date(eDT);
-        let startDTUNIX = Math.round(startDT.getTime() / 1000);
-        let endDTUNIX = Math.round(endDT.getTime() / 1000);
-        let msg = "";
+        const startDT = new Date(sDT);
+        const endDT = new Date(eDT);
+        const startDTUNIX = Math.round(startDT.getTime() / 1000);
+        const endDTUNIX = Math.round(endDT.getTime() / 1000);
+        let msg = '';
         if (startDT.getFullYear() === endDT.getFullYear()) {
             if (startDT.getMonth() === endDT.getMonth()) {
-                //days
+                // days
                 msg = DateTimeRangePicker.buildMessage(TYPE_DAYS, startDTUNIX, endDTUNIX);
             } else {
-                //months
+                // months
                 msg = DateTimeRangePicker.buildMessage(TYPE_MONTHS, startDTUNIX, endDTUNIX);
             }
         } else {
-            //years
+            // years
             msg = DateTimeRangePicker.buildMessage(TYPE_YEARS, startDTUNIX, endDTUNIX);
         }
         super.publish(msg);
@@ -112,21 +111,21 @@ class DateTimeRangePicker extends Widget {
      */
     isDateRangeValid(sDT, eDT) {
         if (!sDT || !eDT) {
-            this.setState({errorMsg: ERROR_INVALID_DATETIME, infoMsg: ""});
+            this.setState({ errorMsg: ERROR_INVALID_DATETIME, infoMsg: '' });
             return false;
         }
-        let currentDT = new Date().getTime();
-        let startDT = new Date(sDT).getTime();
-        let endDT = new Date(eDT).getTime();
+        const currentDT = new Date().getTime();
+        const startDT = new Date(sDT).getTime();
+        const endDT = new Date(eDT).getTime();
         if (startDT > currentDT || endDT > currentDT) {
-            this.setState({errorMsg: ERROR_EXCEEDING_CURRENT_DATETIME, infoMsg: ""});
+            this.setState({ errorMsg: ERROR_EXCEEDING_CURRENT_DATETIME, infoMsg: '' });
             return false;
         }
         if (startDT > endDT) {
-            this.setState({errorMsg: ERROR_NEGATIVE_DURATION, infoMsg: ""});
+            this.setState({ errorMsg: ERROR_NEGATIVE_DURATION, infoMsg: '' });
             return false;
         }
-        this.setState({errorMsg: "", infoMsg: ""});
+        this.setState({ errorMsg: '', infoMsg: '' });
         return true;
     }
 
@@ -134,32 +133,32 @@ class DateTimeRangePicker extends Widget {
      * Creates the publish message.
      */
     static buildMessage(typeVal, startDT, endDT) {
-        let type = "";
-        let period = "";
-        let conditionQuery = "";
+        let type = '';
+        let period = '';
+        let conditionQuery = '';
         switch (typeVal) {
             case TYPE_DAYS:
-                type = "day";
-                period = "%d";
+                type = 'day';
+                period = '%d';
                 break;
             case TYPE_MONTHS:
-                type = "month";
-                period = "%m";
+                type = 'month';
+                period = '%m';
                 break;
             case TYPE_YEARS:
-                type = "year";
-                period = "%Y";
+                type = 'year';
+                period = '%Y';
         }
-        let periodQuery = "FROM_UNIXTIME(timestamp,'" + period + "')";
+        const periodQuery = "FROM_UNIXTIME(timestamp,'" + period + "')";
         if (startDT && endDT) {
-            conditionQuery = "timestamp >= " + startDT + " and timestamp <= " + endDT;
+            conditionQuery = 'timestamp >= ' + startDT + ' and timestamp <= ' + endDT;
         } else {
-            conditionQuery = "FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90)";
+            conditionQuery = 'FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90)';
         }
         return {
-            "periodQuery": periodQuery,
-            "conditionQuery": conditionQuery,
-            "type": type
+            periodQuery,
+            conditionQuery,
+            type,
         };
     }
 
@@ -174,10 +173,10 @@ class DateTimeRangePicker extends Widget {
                             label="Start date/time"
                             type="datetime-local"
                             InputLabelProps={{
-                                shrink: true
+                                shrink: true,
                             }}
                             value={this.state.startDateTime}
-                            onChange={(e) => this.setState({startDateTime: e.target.value})}
+                            onChange={e => this.setState({ startDateTime: e.target.value })}
                         />
                         -
                         <TextField
@@ -186,29 +185,43 @@ class DateTimeRangePicker extends Widget {
                             label="End date/time"
                             type="datetime-local"
                             InputLabelProps={{
-                                shrink: true
+                                shrink: true,
                             }}
                             value={this.state.endDateTime}
-                            onChange={(e) => this.setState({endDateTime: e.target.value})}
+                            onChange={e => this.setState({ endDateTime: e.target.value })}
                         />
-                        <Button onClick={() => this.customFilter()} variant="contained" size="small" color="primary"
-                                className="btn-filter-custom">
+                        <Button
+                            onClick={() => this.customFilter()}
+                            variant="contained"
+                            size="small"
+                            color="primary"
+                            className="btn-filter-custom"
+                        >
                             Filter
                         </Button>
-                        <Button onClick={() => this.defaultFilter()} variant="contained" size="small" color="default"
-                                className="btn-filter-default">
+                        <Button
+                            onClick={() => this.defaultFilter()}
+                            variant="contained"
+                            size="small"
+                            color="default"
+                            className="btn-filter-default"
+                        >
                             Show past 90 days
                         </Button>
                     </div>
-                    <p className="error-msg">{this.state.errorMsg}</p>
-                    <p className="info-msg">{this.state.infoMsg}</p>
+                    <p className="error-msg">
+                        {this.state.errorMsg}
+                    </p>
+                    <p className="info-msg">
+                        {this.state.infoMsg}
+                    </p>
                 </div>
             </JssProvider>
         );
     }
 }
 
-//This is the workaround suggested in https://github.com/marmelab/react-admin/issues/1782
+// This is the workaround suggested in https://github.com/marmelab/react-admin/issues/1782
 const escapeRegex = /([[\].#*$><+~=|^:(),"'`\s])/g;
 let classCounter = 1000;
 

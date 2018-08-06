@@ -27,17 +27,16 @@ import _ from 'lodash';
  * Displays a graph on average payment transaction amounts broken down as SCA and Exempted.
  */
 class AverageTransactionAmountGraph extends Widget {
-
     constructor(props) {
         super(props);
         this.state = {
             gData: [],
             dataProviderConf: null,
             metadata: null,
-            chartConfig:null,
+            chartConfig: null,
             width: this.props.glContainer.width,
             height: this.props.glContainer.height,
-            isInitialized :false
+            isInitialized: false,
         };
         this.handleDataReceived = this.handleDataReceived.bind(this);
         this.updateWidgetConf = this.updateWidgetConf.bind(this);
@@ -49,16 +48,16 @@ class AverageTransactionAmountGraph extends Widget {
     componentDidMount() {
         super.getWidgetConfiguration(this.props.widgetID)
             .then((message) => {
-                this.setState({dataProviderConf :  message.data.configs.providerConfig});
-                //Subscribes to the DateTimeRangePicker widget.
+                this.setState({ dataProviderConf: message.data.configs.providerConfig });
+                // Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
-                    //Sends initialization message to the DateTimeRangePicker widget.
-                    super.publish("init");
+                    // Sends initialization message to the DateTimeRangePicker widget.
+                    super.publish('init');
                 }
             })
             .catch((error) => {
-                console.log("error", error);
+                console.log('error', error);
             });
     }
 
@@ -66,79 +65,73 @@ class AverageTransactionAmountGraph extends Widget {
      * Handles the message received from the DateTimeRangePicker widget.
      */
     setReceivedMsg(receivedMsg) {
-        if (receivedMsg === "init") {
+        if (receivedMsg === 'init') {
             this.defaultFilter();
         }
-        //Removes data from the widget.
+        // Removes data from the widget.
         this.handleDataReceived(-1);
-        this.updateWidgetConf(receivedMsg)
+        this.updateWidgetConf(receivedMsg);
     }
 
     /**
      * Updates the providerConf of the widgetConf with a new SQL query.
      * Updates the config and metadata of the charts with new axis data.
      */
-    updateWidgetConf (dTRange){
-        let nChartConfig = {
+    updateWidgetConf(dTRange) {
+        const nChartConfig = {
             x: dTRange.type,
             charts: [
                 {
-                    type: "line",
-                    y: "amount(£)",
-                    color: "tra",
-                    colorScale:["#00FF85","#0085FF"],
-                    style:{strokeWidth:2,markRadius:5}
-                }
+                    type: 'line',
+                    y: 'amount(£)',
+                    color: 'tra',
+                    colorScale: ['#00FF85', '#0085FF'],
+                    style: { strokeWidth: 2, markRadius: 5 },
+                },
             ],
-            append:false,
-            legend: true
+            append: false,
+            legend: true,
         };
-        let nMetadata = {
+        const nMetadata = {
             names: [
                 dTRange.type,
-                "amount(£)",
-                "tra"
+                'amount(£)',
+                'tra',
             ],
             types: [
-                "linear",
-                "linear",
-                "ordinal"
-            ]
+                'linear',
+                'linear',
+                'ordinal',
+            ],
         };
-        this.setState({ chartConfig:nChartConfig, metadata:nMetadata});
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        this.setState({ chartConfig: nChartConfig, metadata: nMetadata });
+        const providerConfig = _.cloneDeep(this.state.dataProviderConf);
         providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query
             .replace(/{{condition}}/g, dTRange.conditionQuery)
             .replace(/{{period}}/g, dTRange.periodQuery);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this.handleDataReceived, providerConfig);
-    };
+    }
 
     /**
      * Sets the state of the widget after receiving data from the provider.
      */
     handleDataReceived(data) {
-        // console.log(data);
-
-        if (data === -1) {
-            this.setState({gData:[]});
-        }else {
-            this.setState({gData: AverageTransactionAmountGraph.convertDataToInt(data.data)});
-        }
+        this.setState({ gData: data === -1 ? [] : AverageTransactionAmountGraph.convertDataToInt(data.data) });
     }
 
     /**
      * Handles the resizing of a widget component.
      */
     handleResize() {
-        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
+        this.setState({ width: this.props.glContainer.width, height: this.props.glContainer.height });
     }
 
     /**
      * Converts string data of the chart x-axis to integers.
      */
-    static convertDataToInt(data){
+    static convertDataToInt(data) {
         for (let i = 0; i < data.length; i++) {
-            data[i][0] = parseInt(data[i][0]);
+            data[i][0] = parseInt(data[i][0], 10);
         }
         return data;
     }
@@ -146,7 +139,7 @@ class AverageTransactionAmountGraph extends Widget {
     render() {
         return (
             <div className="container-atag">
-                <br/>
+                <br />
                 <VizG
                     config={this.state.chartConfig}
                     metadata={this.state.metadata}
@@ -160,4 +153,3 @@ class AverageTransactionAmountGraph extends Widget {
 }
 
 global.dashboard.registerWidget('AverageTransactionAmountGraph', AverageTransactionAmountGraph);
-

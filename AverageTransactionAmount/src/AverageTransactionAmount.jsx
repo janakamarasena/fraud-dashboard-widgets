@@ -19,36 +19,35 @@
 
 import React from 'react';
 import Widget from '@wso2-dashboards/widget';
-import {VictoryPie} from 'victory';
+import { VictoryPie } from 'victory';
 import Grid from '@material-ui/core/Grid';
 import './AverageTransactionAmount.css';
 import VizG from 'react-vizgrammar';
 import _ from 'lodash';
 
-//Query columns
+// Query columns
 const QC_COUNT = 1;
 const QC_AMOUNT = 2;
 const QC_DRILL_DOWN_EXEMPT_AVG_AMOUNT = 1;
 
-//Query rows
+// Query rows
 const QR_SCA = 0;
 const QR_EXEMPT = 1;
 
-//Dynamic queries
-const MAIN_QUERY = "select " +
-    "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra, " +
-    "count(ID) as count, sum(amount) as amount " +
-    "from TransactionsHistory where {{condition}} group by tra order by tra desc #";
-const DRILL_DOWN_QUERY = "select " +
-    "exemption, " +
-    "round(avg(amount),2) as amount " +
-    "from TransactionsHistory where {{condition}} and isSCAApplied = 0 group by exemption #";
+// Dynamic queries
+const MAIN_QUERY = 'select '
+    + 'if(isSCAApplied = 1, "SCA", "EXEMPTED") as tra, '
+    + 'count(ID) as count, sum(amount) as amount '
+    + 'from TransactionsHistory where {{condition}} group by tra order by tra desc #';
+const DRILL_DOWN_QUERY = 'select '
+    + 'exemption, '
+    + 'round(avg(amount),2) as amount '
+    + 'from TransactionsHistory where {{condition}} and isSCAApplied = 0 group by exemption #';
 
 /**
  * Displays data related to average payment transaction amounts.
  */
 class AverageTransactionAmount extends Widget {
-
     constructor(props) {
         super(props);
         this.state = {
@@ -67,36 +66,36 @@ class AverageTransactionAmount extends Widget {
             dataProviderConf: null,
             drillDownData: [],
             isInitialized: false,
-            dTRange: null
+            dTRange: null,
         };
         this.drillDownTableConfig = {
             charts: [
                 {
-                    type: "table",
+                    type: 'table',
                     columns: [
                         {
-                            name: "exemption",
-                            title: "Exemption"
+                            name: 'exemption',
+                            title: 'Exemption',
                         },
                         {
-                            name: "amount",
-                            title: "Average Amount(£)"
-                        }
-                    ]
-                }
+                            name: 'amount',
+                            title: 'Average Amount(£)',
+                        },
+                    ],
+                },
             ],
             legend: false,
-            append: false
+            append: false,
         };
         this.drillDownMetadata = {
             names: [
-                "exemption",
-                "amount"
+                'exemption',
+                'amount',
             ],
             types: [
-                "ordinal",
-                "linear"
-            ]
+                'ordinal',
+                'linear',
+            ],
         };
         this.handleDataReceived = this.handleDataReceived.bind(this);
         this.hasDataChanged = this.hasDataChanged.bind(this);
@@ -110,18 +109,16 @@ class AverageTransactionAmount extends Widget {
     componentDidMount() {
         super.getWidgetConfiguration(this.props.widgetID)
             .then((message) => {
-                this.setState({
-                    dataProviderConf: message.data.configs.providerConfig
-                });
-                //Subscribes to the DateTimeRangePicker widget.
+                this.setState({ dataProviderConf: message.data.configs.providerConfig });
+                // Subscribes to the DateTimeRangePicker widget.
                 super.subscribe(this.setReceivedMsg);
                 if (!this.state.isInitialized) {
-                    //Sends initialization message to the DateTimeRangePicker widget.
-                    super.publish("init");
+                    // Sends initialization message to the DateTimeRangePicker widget.
+                    super.publish('init');
                 }
             })
             .catch((error) => {
-                console.log("error", error);
+                console.log('error', error);
             });
     }
 
@@ -130,10 +127,10 @@ class AverageTransactionAmount extends Widget {
      */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
-            this.setState({isInitialized: true});
+            this.setState({ isInitialized: true });
         }
-        this.setState({dTRange: receivedMsg});
-        //Removes data from the widget.
+        this.setState({ dTRange: receivedMsg });
+        // Removes data from the widget.
         this.handleDataReceived(-1);
         this.updateProviderConf(this.state.isExemptDrillDownVisible, receivedMsg);
     }
@@ -142,10 +139,10 @@ class AverageTransactionAmount extends Widget {
      * Updates the providerConf of the widgetConf with a new SQL query.
      */
     updateProviderConf(val, dTRange) {
-        let providerConfig = _.cloneDeep(this.state.dataProviderConf);
+        const providerConfig = _.cloneDeep(this.state.dataProviderConf);
         providerConfig.configs.config.queryData.query = val === true ? DRILL_DOWN_QUERY : MAIN_QUERY;
-        providerConfig.configs.config.queryData.query =
-            providerConfig.configs.config.queryData.query.replace(/{{condition}}/g, dTRange.conditionQuery);
+        providerConfig.configs.config.queryData.query = providerConfig.configs.config.queryData.query
+            .replace(/{{condition}}/g, dTRange.conditionQuery);
         super.getWidgetChannelManager().subscribeWidget(this.props.widgetID, this.handleDataReceived, providerConfig);
     }
 
@@ -167,27 +164,29 @@ class AverageTransactionAmount extends Widget {
                 data: [
                     {
                         x: 1,
-                        y: 0
+                        y: 0,
                     },
                     {
                         x: 2,
-                        y: 0
-                    }
-                ]
+                        y: 0,
+                    },
+                ],
             });
             return;
         }
         if (!this.state.isExemptDrillDownVisible && this.hasDataChanged(data.data)) {
-            let nTotCount = data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT];
-            let nTotAmount = data.data[QR_SCA][QC_AMOUNT] + data.data[QR_EXEMPT][QC_AMOUNT];
-            let nTotAmountAvg = AverageTransactionAmount.getAverage(nTotAmount, nTotCount);
-            let nSCAAmountAvg = AverageTransactionAmount.getAverage(
-                data.data[QR_SCA][QC_AMOUNT], data.data[QR_SCA][QC_COUNT]);
-            let nExemptAmountAvg = AverageTransactionAmount.getAverage(
-                data.data[QR_EXEMPT][QC_AMOUNT], data.data[QR_EXEMPT][QC_COUNT]);
-            let nSCAPercent = AverageTransactionAmount.getPercentage(data.data[QR_SCA][QC_COUNT],
+            const nTotCount = data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT];
+            const nTotAmount = data.data[QR_SCA][QC_AMOUNT] + data.data[QR_EXEMPT][QC_AMOUNT];
+            const nTotAmountAvg = AverageTransactionAmount.getAverage(nTotAmount, nTotCount);
+            const nSCAAmountAvg = AverageTransactionAmount.getAverage(
+                data.data[QR_SCA][QC_AMOUNT], data.data[QR_SCA][QC_COUNT],
+            );
+            const nExemptAmountAvg = AverageTransactionAmount.getAverage(
+                data.data[QR_EXEMPT][QC_AMOUNT], data.data[QR_EXEMPT][QC_COUNT],
+            );
+            const nSCAPercent = AverageTransactionAmount.getPercentage(data.data[QR_SCA][QC_COUNT],
                 data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT]);
-            let nExemptPercent = AverageTransactionAmount.getPercentage(data.data[QR_EXEMPT][QC_COUNT],
+            const nExemptPercent = AverageTransactionAmount.getPercentage(data.data[QR_EXEMPT][QC_COUNT],
                 data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT]);
             this.setState({
                 totCount: nTotCount,
@@ -201,17 +200,17 @@ class AverageTransactionAmount extends Widget {
                 data: [
                     {
                         x: 1,
-                        y: nSCAPercent
+                        y: nSCAPercent,
                     },
                     {
                         x: 2,
-                        y: nExemptPercent
-                    }
-                ]
+                        y: nExemptPercent,
+                    },
+                ],
             });
         } else if (this.state.isExemptDrillDownVisible && this.hasDataChanged(data.data)) {
             this.setState({
-                drillDownData: data.data
+                drillDownData: data.data,
             });
         }
     }
@@ -221,8 +220,8 @@ class AverageTransactionAmount extends Widget {
      */
     hasDataChanged(data) {
         if (!this.state.isExemptDrillDownVisible) {
-            if (this.state.scaTotAmount !== data[QR_SCA][QC_AMOUNT] ||
-                this.state.exemptTotAmount !== data[QR_EXEMPT][QC_AMOUNT]) {
+            if (this.state.scaTotAmount !== data[QR_SCA][QC_AMOUNT]
+                || this.state.exemptTotAmount !== data[QR_EXEMPT][QC_AMOUNT]) {
                 return true;
             }
         } else {
@@ -230,19 +229,20 @@ class AverageTransactionAmount extends Widget {
                 return true;
             }
             for (let i = 0; i < data.length; i++) {
-                if (data[i][QC_DRILL_DOWN_EXEMPT_AVG_AMOUNT] !==
-                    this.state.drillDownData[i][QC_DRILL_DOWN_EXEMPT_AVG_AMOUNT]) {
+                if (data[i][QC_DRILL_DOWN_EXEMPT_AVG_AMOUNT]
+                    !== this.state.drillDownData[i][QC_DRILL_DOWN_EXEMPT_AVG_AMOUNT]) {
                     return true;
                 }
             }
         }
+        return false;
     }
 
     /**
      * Handles the resizing of a widget component.
      */
     handleResize() {
-        this.setState({width: this.props.glContainer.width, height: this.props.glContainer.height});
+        this.setState({ width: this.props.glContainer.width, height: this.props.glContainer.height });
     }
 
     /**
@@ -269,14 +269,14 @@ class AverageTransactionAmount extends Widget {
      * Rounds up a given number to two decimals.
      */
     static roundToTwoDecimals(num) {
-        return Math.round(num * 100) / 100
+        return Math.round(num * 100) / 100;
     }
 
     /**
      * Toggles the drill down view.
      */
     showDrillDownView(val) {
-        this.setState({isExemptDrillDownVisible: val});
+        this.setState({ isExemptDrillDownVisible: val });
         this.updateProviderConf(val, this.state.dTRange);
     }
 
@@ -284,7 +284,9 @@ class AverageTransactionAmount extends Widget {
         return (
             <div>
                 <div className="main-container" hidden={this.state.isExemptDrillDownVisible}>
-                    <h1 style={{marginBottom: "52px"}}>£{this.state.totAmountAvg}</h1>
+                    <h1 style={{ marginBottom: '52px' }}>
+                        £{this.state.totAmountAvg}
+                    </h1>
                     <Grid container spacing={24}>
                         <Grid item xs={7}>
                             <svg viewBox="45 28 280 230" className="pointer">
@@ -293,41 +295,49 @@ class AverageTransactionAmount extends Widget {
                                     data={this.state.data}
                                     height={230}
                                     innerRadius={82}
-                                    labels={(d) => ``}
-                                    colorScale={["#00FF85", "#0085FF"]}
-                                    animate={{duration: 100}}
+                                    labels={d => ''}
+                                    colorScale={['#00FF85', '#0085FF']}
+                                    animate={{ duration: 100 }}
                                     events={[{
-                                        target: "data",
+                                        target: 'data',
                                         eventHandlers: {
                                             onClick: (e, d) => {
-                                                return d.index === 1 ? this.showDrillDownView(true) : null
-                                            }
-                                        }
+                                                return d.index === 1 ? this.showDrillDownView(true) : null;
+                                            },
+                                        },
                                     }]}
                                 />
                             </svg>
                         </Grid>
                         <Grid item xs={5}>
-                            <Grid style={{marginTop: "2px"}} container direction={"column"} spacing={24}>
-                                <Grid item xs={12} style={{marginTop: "-12px"}}>
+                            <Grid style={{ marginTop: '2px' }} container direction="column" spacing={24}>
+                                <Grid item xs={12} style={{ marginTop: '-12px' }}>
                                     <Grid container>
                                         <Grid item xs={2}>
-                                            <div className="square-green"/>
+                                            <div className="square-green" />
                                         </Grid>
                                         <Grid className="t-align" item xs={10}>
-                                            <div className="legend-name">SCA ({this.state.scaPercent}%)</div>
-                                            <div className="legend-amount">£{this.state.scaAmountAvg}</div>
+                                            <div className="legend-name">
+                                                SCA ({this.state.scaPercent}%)
+                                            </div>
+                                            <div className="legend-amount">
+                                                £{this.state.scaAmountAvg}
+                                            </div>
                                         </Grid>
                                     </Grid>
                                 </Grid>
                                 <Grid item xs={12}>
                                     <Grid container>
                                         <Grid item xs={2}>
-                                            <div className="square-blue"/>
+                                            <div className="square-blue" />
                                         </Grid>
                                         <Grid className="t-align" item xs={10}>
-                                            <div className="legend-name">EXEMPTED ({this.state.exemptPercent}%)</div>
-                                            <div className="legend-amount">£{this.state.exemptAmountAvg}</div>
+                                            <div className="legend-name">
+                                                EXEMPTED ({this.state.exemptPercent}%)
+                                            </div>
+                                            <div className="legend-amount">
+                                                £{this.state.exemptAmountAvg}
+                                            </div>
                                         </Grid>
                                     </Grid>
                                 </Grid>
@@ -339,10 +349,14 @@ class AverageTransactionAmount extends Widget {
                     </p>
                 </div>
                 <div className="main-container" hidden={!this.state.isExemptDrillDownVisible}>
-                    <div onClick={() => this.showDrillDownView(false)} className="drill-down-close">&times;</div>
-                    <br/>
-                    <h2 className="drill-down-title">EXEMPTED</h2>
-                    <div style={{margin: "20px"}}>
+                    <div onClick={() => this.showDrillDownView(false)} className="drill-down-close">
+                        &times;
+                    </div>
+                    <br />
+                    <h2 className="drill-down-title">
+                        EXEMPTED
+                    </h2>
+                    <div style={{ margin: '20px' }}>
                         <VizG
                             config={this.drillDownTableConfig}
                             metadata={this.drillDownMetadata}
