@@ -312,7 +312,7 @@ class AverageTransactionAmount extends Widget {
                                 <Grid item xs={12} style={{marginTop: "-12px"}}>
                                     <Grid container>
                                         <Grid item xs={2}>
-                                            <div className="square-green"></div>
+                                            <div className="square-green"/>
                                         </Grid>
                                         <Grid className="t-align" item xs={10}>
                                             <div className="legend-name">SCA ({this.state.scaPercent}%)</div>
@@ -323,7 +323,7 @@ class AverageTransactionAmount extends Widget {
                                 <Grid item xs={12}>
                                     <Grid container>
                                         <Grid item xs={2}>
-                                            <div className="square-blue"></div>
+                                            <div className="square-blue"/>
                                         </Grid>
                                         <Grid className="t-align" item xs={10}>
                                             <div className="legend-name">EXEMPTED ({this.state.exemptPercent}%)</div>
