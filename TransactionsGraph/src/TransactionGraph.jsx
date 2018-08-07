@@ -39,16 +39,25 @@ const lightTheme = createMuiTheme({
     },
 });
 
+// Query columns
+const QC_PERIOD = 0;
+const QC_TRA = 2;
+
 // Dynamic queries
 const QUERY_AMOUNT = 'select '
     + '{{period}} as period, '
     + 'round(sum(amount), 2)  as amount, '
     + 'if(isSCAApplied = 1, "SCA", "EXEMPTED") as tra '
     + 'from TransactionsHistory where {{condition}} group by period, isSCAApplied order by period asc, tra desc #';
-const QUERY_COUNT = 'select {{period}} as period, '
+const QUERY_COUNT = 'select '
+    + '{{period}} as period, '
     + 'count(*) as count, '
-    + "if(isSCAApplied = 1, 'SCA', 'EXEMPTED') as tra "
+    + 'if(isSCAApplied = 1, "SCA", "EXEMPTED") as tra '
     + 'from TransactionsHistory where {{condition}} group by  period, isSCAApplied order by period asc, tra desc #';
+
+// Chart colors scales
+const SCA_FIRST = ['#00FF85', '#0085FF'];
+const EXEMPTED_FIRST = ['#0085FF', '#00FF85'];
 
 /**
  * Displays graphs on payment transactions (Amounts and Counts) broken down as SCA and Exempted.
@@ -149,7 +158,14 @@ class TransactionGraph extends Widget {
      * Sets the state of the widget after receiving data from the provider.
      */
     handleDataReceived(data) {
-        this.setState({ gData: data === -1 ? [] : TransactionGraph.convertDataToInt(data.data) });
+        if (data === -1) {
+            this.setState({ gData: [] });
+        } else {
+            const nChartConfig = this.state.chartConfig;
+            // Keeps the chart legend colors consistent.
+            nChartConfig.charts[0].colorScale = data.data[0][QC_TRA] === 'SCA' ? SCA_FIRST : EXEMPTED_FIRST;
+            this.setState({ chartConfig: nChartConfig, gData: TransactionGraph.convertDataToInt(data.data) });
+        }
     }
 
     /**
@@ -172,7 +188,7 @@ class TransactionGraph extends Widget {
      */
     static convertDataToInt(data) {
         for (let i = 0; i < data.length; i++) {
-            data[i][0] = parseInt(data[i][0], 10);
+            data[i][QC_PERIOD] = parseInt(data[i][QC_PERIOD], 10);
         }
         return data;
     }
