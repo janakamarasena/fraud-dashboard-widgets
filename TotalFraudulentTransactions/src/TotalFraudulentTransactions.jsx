@@ -1,20 +1,13 @@
 /*
- *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.com). All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- *
+ * This software is the property of WSO2 Inc. and its suppliers, if any.
+ * Dissemination of any information or reproduction of any material contained
+ * herein is strictly forbidden, unless permitted by WSO2 in accordance with
+ * the WSO2 Commercial License available at http://wso2.com/licenses. For specific
+ * language governing the permissions and limitations under this license,
+ * please see the license as well as any agreement you’ve entered into with
+ * WSO2 governing the purchase of this software and any associated services.
  */
 
 import React from 'react';
@@ -76,12 +69,14 @@ class TotalFraudulentTransactions extends Widget {
                 }
             })
             .catch((error) => {
-                console.log('error', error);
+                console.log('error', error);// TODO: display in widget
             });
     }
 
     /**
      * Handles the message received from the DateTimeRangePicker widget.
+     *
+     * @param {object} receivedMsg Data sent by the DateTimeRangePicker widget.
      */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
@@ -92,6 +87,8 @@ class TotalFraudulentTransactions extends Widget {
 
     /**
      * Updates the providerConf of the widgetConf with a new SQL query.
+     *
+     * @param {object} dTRange Object containing the message received from the DateTimeRangePicker widget.
      */
     updateProviderConf(dTRange) {
         const providerConfig = _.cloneDeep(this.state.dataProviderConf);
@@ -102,6 +99,8 @@ class TotalFraudulentTransactions extends Widget {
 
     /**
      * Sets the state of the widget after receiving data from the provider.
+     *
+     * @param {object} data Object sent by the provider.
      */
     handleDataReceived(data) {
         const nTotCount = data.data[0][QC_TOT_COUNT];
@@ -160,19 +159,35 @@ class TotalFraudulentTransactions extends Widget {
 
     /**
      * Calculates percentage values required for the widget.
+     *
+     * @param {number} val Value.
+     * @param {number} tot Total.
+     * @returns {number} Percentage rounded to two decimals.
      */
     static getPercentage(val, tot) {
-        if (!val || !tot) {
-            return 0;
+        if (val && tot) {
+            return TotalFraudulentTransactions.roundToTwoDecimals((val * 100) / tot);
         }
-        return TotalFraudulentTransactions.roundToTwoDecimals((val * 100) / tot);
+        return 0;
+    }
+
+    /**
+     * Rounds up a given number to two decimals.
+     *
+     * @param {number} num Number.
+     * @returns {number} Number rounded to two decimals.
+     */
+    static roundToTwoDecimals(num) {
+        return Math.round(num * 100) / 100;
     }
 
     /**
      * Toggles the drill down view.
+     *
+     * @param {boolean} val Sets the visibility of the drill down view.
      */
     showDrillDownView(val) {
-        if (val === true) {
+        if (val) {
             this.setState({
                 mainVisibility: 'none',
                 drillDownVisibility: 'flex',
@@ -185,13 +200,6 @@ class TotalFraudulentTransactions extends Widget {
         }
     }
 
-    /**
-     * Rounds up a given number to two decimals.
-     */
-    static roundToTwoDecimals(num) {
-        return Math.round(num * 100) / 100;
-    }
-
     render() {
         return (
             <div className="main-container">
@@ -201,17 +209,17 @@ class TotalFraudulentTransactions extends Widget {
                 <h3 className="fraud-amount-style">
                     {this.state.fraudCount} FRAUDS
                 </h3>
-                <Grid container spacing={24} style={{ display: this.state.mainVisibility }}>
-                    <Grid item xs={12}>
+                <Grid container spacing="24" style={{ display: this.state.mainVisibility }}>
+                    <Grid item xs="12">
                         <svg viewBox="0 40 400 120" className="tft-pointer">
                             <VictoryPie
                                 standalone={false}
-                                startAngle={90}
-                                endAngle={-90}
+                                startAngle="90"
+                                endAngle="-90"
                                 data={this.state.data}
-                                height={300}
-                                innerRadius={80}
-                                labels={d => ''}
+                                height="300"
+                                innerRadius="80"
+                                labels={() => ''}
                                 colorScale={['#0a68ea38', '#0A68EA']}
                                 animate={{ duration: 100 }}
                                 events={[{
@@ -232,33 +240,33 @@ class TotalFraudulentTransactions extends Widget {
                         </p>
                     </Grid>
                 </Grid>
-                <Grid container spacing={24} style={{ display: this.state.drillDownVisibility, marginTop: '8px' }}>
+                <Grid container spacing="24" style={{ display: this.state.drillDownVisibility, marginTop: '8' }}>
                     <div onClick={() => this.showDrillDownView(false)} className="drill-down-close">
                         &times;
                     </div>
-                    <Grid item xs={7}>
+                    <Grid item xs="7">
                         <svg viewBox="85 40 230 120">
                             <VictoryPie
                                 standalone={false}
-                                startAngle={90}
-                                endAngle={-90}
+                                startAngle="90"
+                                endAngle="-90"
                                 data={this.state.drillDownData}
-                                height={300}
-                                innerRadius={80}
-                                labels={d => ''}
+                                height="300"
+                                innerRadius="80"
+                                labels={() => ''}
                                 colorScale={['#0085FF', '#00FF85']}
                                 animate={{ duration: 100 }}
                             />
                         </svg>
                     </Grid>
-                    <Grid item xs={5}>
-                        <Grid style={{ marginTop: '2px' }} container direction="column" spacing={24}>
-                            <Grid item xs={12} style={{ marginTop: '-12px' }}>
+                    <Grid item xs="5">
+                        <Grid style={{ marginTop: '2' }} container direction="column" spacing="24">
+                            <Grid item xs="12" style={{ marginTop: '-12' }}>
                                 <Grid container>
-                                    <Grid item xs={2}>
+                                    <Grid item xs="2">
                                         <div className="square-green" />
                                     </Grid>
-                                    <Grid className="t-align" item xs={10}>
+                                    <Grid className="t-align" item xs="10">
                                         <div className="legend-name">
                                             SCA ({this.state.scaPercent}%)
                                         </div>
@@ -274,12 +282,12 @@ class TotalFraudulentTransactions extends Widget {
                                     </Grid>
                                 </Grid>
                             </Grid>
-                            <Grid item xs={12}>
+                            <Grid item xs="12">
                                 <Grid container>
-                                    <Grid item xs={2}>
+                                    <Grid item xs="2">
                                         <div className="square-blue" />
                                     </Grid>
-                                    <Grid className="t-align" item xs={10}>
+                                    <Grid className="t-align" item xs="10">
                                         <div className="legend-name">
                                             EXEMPTED ({this.state.exemptPercent}%)
                                         </div>

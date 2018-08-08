@@ -1,20 +1,13 @@
 /*
- *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.com). All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- *
+ * This software is the property of WSO2 Inc. and its suppliers, if any.
+ * Dissemination of any information or reproduction of any material contained
+ * herein is strictly forbidden, unless permitted by WSO2 in accordance with
+ * the WSO2 Commercial License available at http://wso2.com/licenses. For specific
+ * language governing the permissions and limitations under this license,
+ * please see the license as well as any agreement you’ve entered into with
+ * WSO2 governing the purchase of this software and any associated services.
  */
 
 import React from 'react';
@@ -51,6 +44,7 @@ class AverageTransactionAmountGraph extends Widget {
         this.handleResize = this.handleResize.bind(this);
         this.props.glContainer.on('resize', this.handleResize);
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
+        this.resetWidgetData = this.resetWidgetData.bind(this);
     }
 
     componentDidMount() {
@@ -71,19 +65,29 @@ class AverageTransactionAmountGraph extends Widget {
 
     /**
      * Handles the message received from the DateTimeRangePicker widget.
+     *
+     * @param {object} receivedMsg Data sent by the DateTimeRangePicker widget.
      */
     setReceivedMsg(receivedMsg) {
         if (receivedMsg === 'init') {
             this.defaultFilter();
         }
-        // Removes data from the widget.
-        this.handleDataReceived(-1);
+        this.resetWidgetData();
         this.updateWidgetConf(receivedMsg);
+    }
+
+    /**
+     * Removes data from the widget.
+     */
+    resetWidgetData() {
+        this.setState({ gData: [] });
     }
 
     /**
      * Updates the providerConf of the widgetConf with a new SQL query.
      * Updates the config and metadata of the charts with new axis data.
+     *
+     * @param {object} dTRange Object containing the message received from the DateTimeRangePicker widget.
      */
     updateWidgetConf(dTRange) {
         const nChartConfig = {
@@ -122,16 +126,14 @@ class AverageTransactionAmountGraph extends Widget {
 
     /**
      * Sets the state of the widget after receiving data from the provider.
+     *
+     * @param {object} data Object sent by the provider.
      */
     handleDataReceived(data) {
-        if (data === -1) {
-            this.setState({ gData: [] });
-        } else {
-            const nChartConfig = this.state.chartConfig;
-            // Keeps the chart legend colors consistent.
-            nChartConfig.charts[0].colorScale = data.data[0][QC_TRA] === 'SCA' ? SCA_FIRST : EXEMPTED_FIRST;
-            this.setState({ chartConfig: nChartConfig, gData: AverageTransactionAmountGraph.convertDataToInt(data.data) });
-        }
+        const nChartConfig = this.state.chartConfig;
+        // Keeps the chart legend colors consistent.
+        nChartConfig.charts[0].colorScale = data.data[0][QC_TRA] === 'SCA' ? SCA_FIRST : EXEMPTED_FIRST;
+        this.setState({ chartConfig: nChartConfig, gData: AverageTransactionAmountGraph.convertDataToInt(data.data) });
     }
 
     /**
@@ -143,6 +145,9 @@ class AverageTransactionAmountGraph extends Widget {
 
     /**
      * Converts string data of the chart x-axis to integers.
+     *
+     * @param {array} data The data array inside the object sent by the provider.
+     * @returns {array}  Received array with chart x-axis values converted to integers.
      */
     static convertDataToInt(data) {
         for (let i = 0; i < data.length; i++) {

@@ -1,20 +1,13 @@
 /*
- *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.com). All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- *
+ * This software is the property of WSO2 Inc. and its suppliers, if any.
+ * Dissemination of any information or reproduction of any material contained
+ * herein is strictly forbidden, unless permitted by WSO2 in accordance with
+ * the WSO2 Commercial License available at http://wso2.com/licenses. For specific
+ * language governing the permissions and limitations under this license,
+ * please see the license as well as any agreement you’ve entered into with
+ * WSO2 governing the purchase of this software and any associated services.
  */
 
 import React from 'react';
@@ -25,10 +18,10 @@ import Button from '@material-ui/core/Button';
 import JssProvider from 'react-jss/lib/JssProvider';
 
 // Info and error messages
-const ERROR_NEGATIVE_DURATION = '*ERROR: start date/time cannot be greater than end date/time.';
-const ERROR_EXCEEDING_CURRENT_DATETIME = '*ERROR: filter date/time cannot exceed current date/time.';
-const ERROR_INVALID_DATETIME = '*ERROR: invalid date/time.';
-const INFO = '*Currently showing the past 90 days in real-time (filter not applied).';
+const ERROR_NEGATIVE_DURATION = '*ERROR: The start date/time cannot be later than the end date/time.';
+const ERROR_EXCEEDING_CURRENT_DATETIME = '*ERROR: The given date/time is in the future.';
+const ERROR_INVALID_DATETIME = '*ERROR: Invalid date/time.';
+const INFO = '*Filters not applied - Showing the transactions of the past 90 days in real-time.';
 
 // Types
 const TYPE_DAYS = 1;
@@ -47,23 +40,25 @@ class DateTimeRangePicker extends Widget {
             errorMsg: '',
             infoMsg: INFO,
         };
-        this.defaultFilter = this.defaultFilter.bind(this);
-        this.customFilter = this.customFilter.bind(this);
+        this.applyDefaultFilter = this.applyDefaultFilter.bind(this);
+        this.applyCustomFilter = this.applyCustomFilter.bind(this);
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
         this.isDateRangeValid = this.isDateRangeValid.bind(this);
     }
 
     componentDidMount() {
-        this.defaultFilter();
+        this.applyDefaultFilter();
         super.subscribe(this.setReceivedMsg);
     }
 
     /**
      * Listens to other widgets initialize message.
+     *
+     * @param {string} receivedMsg Initialization message sent by other widgets.
      */
     setReceivedMsg(receivedMsg) {
         if (receivedMsg === 'init') {
-            this.defaultFilter();
+            this.applyDefaultFilter();
         }
     }
 
@@ -71,7 +66,7 @@ class DateTimeRangePicker extends Widget {
      * Creates a message to filter date time range for the past 90 days
      * from the current time.
      */
-    defaultFilter() {
+    applyDefaultFilter() {
         this.setState({ errorMsg: '', infoMsg: INFO });
         const msg = DateTimeRangePicker.buildMessage(TYPE_MONTHS);
         super.publish(msg);
@@ -80,7 +75,7 @@ class DateTimeRangePicker extends Widget {
     /**
      * Creates a message to filter date time range for given user input.
      */
-    customFilter() {
+    applyCustomFilter() {
         const sDT = this.state.startDateTime;
         const eDT = this.state.endDateTime;
         if (!this.isDateRangeValid(sDT, eDT)) {
@@ -108,6 +103,10 @@ class DateTimeRangePicker extends Widget {
 
     /**
      * Validates user input.
+     *
+     * @param {string} sDT Start date time.
+     * @param {string} eDT End date time.
+     * @returns {boolean} States whether the date range is valid.
      */
     isDateRangeValid(sDT, eDT) {
         if (!sDT || !eDT) {
@@ -131,6 +130,11 @@ class DateTimeRangePicker extends Widget {
 
     /**
      * Creates the publish message.
+     *
+     * @param {number} typeVal Number corresponding to the period type.
+     * @param {number} startDT Unix timestamp of starting date and time.
+     * @param {number} endDT Unix timestamp of ending date and time.
+     * @returns {object} Messaged to be published.
      */
     static buildMessage(typeVal, startDT, endDT) {
         let type = '';
@@ -155,11 +159,7 @@ class DateTimeRangePicker extends Widget {
         } else {
             conditionQuery = 'FROM_UNIXTIME(timestamp) > SUBDATE(NOW(),90)';
         }
-        return {
-            periodQuery,
-            conditionQuery,
-            type,
-        };
+        return { periodQuery, conditionQuery, type };
     }
 
     render() {
@@ -191,7 +191,7 @@ class DateTimeRangePicker extends Widget {
                             onChange={e => this.setState({ endDateTime: e.target.value })}
                         />
                         <Button
-                            onClick={() => this.customFilter()}
+                            onClick={() => this.applyCustomFilter()}
                             variant="contained"
                             size="small"
                             color="primary"
@@ -200,7 +200,7 @@ class DateTimeRangePicker extends Widget {
                             Filter
                         </Button>
                         <Button
-                            onClick={() => this.defaultFilter()}
+                            onClick={() => this.applyDefaultFilter()}
                             variant="contained"
                             size="small"
                             color="default"

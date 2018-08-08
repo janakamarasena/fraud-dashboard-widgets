@@ -1,20 +1,13 @@
 /*
- *  Copyright (c) 2018, WSO2 Inc. (http://www.wso2.org) All Rights Reserved.
+ * Copyright (c) 2018, WSO2 Inc. (http://www.wso2.com). All Rights Reserved.
  *
- *  WSO2 Inc. licenses this file to you under the Apache License,
- *  Version 2.0 (the "License"); you may not use this file except
- *  in compliance with the License.
- *  You may obtain a copy of the License at
- *
- *  http://www.apache.org/licenses/LICENSE-2.0
- *
- *  Unless required by applicable law or agreed to in writing,
- *  software distributed under the License is distributed on an
- *  "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY
- *  KIND, either express or implied.  See the License for the
- *  specific language governing permissions and limitations
- *  under the License.
- *
+ * This software is the property of WSO2 Inc. and its suppliers, if any.
+ * Dissemination of any information or reproduction of any material contained
+ * herein is strictly forbidden, unless permitted by WSO2 in accordance with
+ * the WSO2 Commercial License available at http://wso2.com/licenses. For specific
+ * language governing the permissions and limitations under this license,
+ * please see the license as well as any agreement you’ve entered into with
+ * WSO2 governing the purchase of this software and any associated services.
  */
 
 import React from 'react';
@@ -104,6 +97,7 @@ class AverageTransactionAmount extends Widget {
         this.showDrillDownView = this.showDrillDownView.bind(this);
         this.setReceivedMsg = this.setReceivedMsg.bind(this);
         this.updateProviderConf = this.updateProviderConf.bind(this);
+        this.resetWidgetData = this.resetWidgetData.bind(this);
     }
 
     componentDidMount() {
@@ -122,21 +116,53 @@ class AverageTransactionAmount extends Widget {
             });
     }
 
+
     /**
      * Handles the message received from the DateTimeRangePicker widget.
+     *
+     * @param {object} receivedMsg Data sent by the DateTimeRangePicker widget.
      */
     setReceivedMsg(receivedMsg) {
         if (!this.state.isInitialized) {
             this.setState({ isInitialized: true });
         }
         this.setState({ dTRange: receivedMsg });
-        // Removes data from the widget.
-        this.handleDataReceived(-1);
+        this.resetWidgetData();
         this.updateProviderConf(this.state.isExemptDrillDownVisible, receivedMsg);
     }
 
     /**
+     * Removes data from the widget.
+     */
+    resetWidgetData() {
+        this.setState({
+            totCount: 0,
+            totAmountAvg: 0,
+            scaAmountAvg: 0,
+            exemptAmountAvg: 0,
+            scaTotAmount: 0,
+            exemptTotAmount: 0,
+            scaPercent: 0,
+            exemptPercent: 0,
+            drillDownData: [[]],
+            data: [
+                {
+                    x: 1,
+                    y: 0,
+                },
+                {
+                    x: 2,
+                    y: 0,
+                },
+            ],
+        });
+    }
+
+    /**
      * Updates the providerConf of the widgetConf with a new SQL query.
+     *
+     * @param {boolean} val Value of isExemptDrillDownVisible.
+     * @param {object} dTRange Object containing the message received from the DateTimeRangePicker widget.
      */
     updateProviderConf(val, dTRange) {
         const providerConfig = _.cloneDeep(this.state.dataProviderConf);
@@ -148,32 +174,10 @@ class AverageTransactionAmount extends Widget {
 
     /**
      * Sets the state of the widget after receiving data from the provider.
+     *
+     * @param {object} data Object sent by the provider.
      */
     handleDataReceived(data) {
-        if (data === -1) {
-            this.setState({
-                totCount: 0,
-                totAmountAvg: 0,
-                scaAmountAvg: 0,
-                exemptAmountAvg: 0,
-                scaTotAmount: 0,
-                exemptTotAmount: 0,
-                scaPercent: 0,
-                exemptPercent: 0,
-                drillDownData: [[]],
-                data: [
-                    {
-                        x: 1,
-                        y: 0,
-                    },
-                    {
-                        x: 2,
-                        y: 0,
-                    },
-                ],
-            });
-            return;
-        }
         if (!this.state.isExemptDrillDownVisible && this.hasDataChanged(data.data)) {
             const nTotCount = data.data[QR_SCA][QC_COUNT] + data.data[QR_EXEMPT][QC_COUNT];
             const nTotAmount = data.data[QR_SCA][QC_AMOUNT] + data.data[QR_EXEMPT][QC_AMOUNT];
@@ -217,8 +221,13 @@ class AverageTransactionAmount extends Widget {
 
     /**
      * Checks whether the received provider data is equal to existing data.
+     *
+     * @param {array} data The data array inside the object sent by the provider.
+     * @returns {boolean} States whether data has changed.
      */
     hasDataChanged(data) {
+        // TODO: shouldComponentUpdate()
+
         if (!this.state.isExemptDrillDownVisible) {
             if (this.state.scaTotAmount !== data[QR_SCA][QC_AMOUNT]
                 || this.state.exemptTotAmount !== data[QR_EXEMPT][QC_AMOUNT]) {
@@ -247,26 +256,37 @@ class AverageTransactionAmount extends Widget {
 
     /**
      * Calculates percentage values required for the widget.
+     *
+     * @param {number} val Value.
+     * @param {number} tot Total.
+     * @returns {number} Percentage rounded to two decimals.
      */
     static getPercentage(val, tot) {
-        if (!val || !tot) {
-            return 0;
+        if (val && tot) {
+            return AverageTransactionAmount.roundToTwoDecimals((val * 100) / tot);
         }
-        return AverageTransactionAmount.roundToTwoDecimals((val * 100) / tot);
+        return 0;
     }
 
     /**
      * Calculates average values required for the widget.
+     *
+     * @param {number} val Value.
+     * @param {number} count Count.
+     * @returns {number} Average rounded to two decimals.
      */
     static getAverage(val, count) {
-        if (!val || !count) {
-            return 0;
+        if (val && count) {
+            return AverageTransactionAmount.roundToTwoDecimals(val / count);
         }
-        return AverageTransactionAmount.roundToTwoDecimals(val / count);
+        return 0;
     }
 
     /**
      * Rounds up a given number to two decimals.
+     *
+     * @param {number} num Number.
+     * @returns {number} Number rounded to two decimals.
      */
     static roundToTwoDecimals(num) {
         return Math.round(num * 100) / 100;
@@ -274,6 +294,8 @@ class AverageTransactionAmount extends Widget {
 
     /**
      * Toggles the drill down view.
+     *
+     * @param {boolean} val Sets the visibility of the drill down view.
      */
     showDrillDownView(val) {
         this.setState({ isExemptDrillDownVisible: val });
@@ -284,18 +306,18 @@ class AverageTransactionAmount extends Widget {
         return (
             <div>
                 <div className="main-container" hidden={this.state.isExemptDrillDownVisible}>
-                    <h1 style={{ marginBottom: '52px' }}>
+                    <h1 style={{ marginBottom: '52' }}>
                         £{this.state.totAmountAvg}
                     </h1>
-                    <Grid container spacing={24}>
-                        <Grid item xs={7}>
+                    <Grid container spacing="24">
+                        <Grid item xs="7">
                             <svg viewBox="45 28 280 230" className="pointer">
                                 <VictoryPie
                                     standalone={false}
                                     data={this.state.data}
-                                    height={230}
-                                    innerRadius={82}
-                                    labels={d => ''}
+                                    height="230"
+                                    innerRadius="82"
+                                    labels={() => ''}
                                     colorScale={['#00FF85', '#0085FF']}
                                     animate={{ duration: 100 }}
                                     events={[{
@@ -309,14 +331,14 @@ class AverageTransactionAmount extends Widget {
                                 />
                             </svg>
                         </Grid>
-                        <Grid item xs={5}>
-                            <Grid style={{ marginTop: '2px' }} container direction="column" spacing={24}>
-                                <Grid item xs={12} style={{ marginTop: '-12px' }}>
+                        <Grid item xs="5">
+                            <Grid style={{ marginTop: '2' }} container direction="column" spacing="24">
+                                <Grid item xs="12" style={{ marginTop: '-12' }}>
                                     <Grid container>
-                                        <Grid item xs={2}>
+                                        <Grid item xs="2">
                                             <div className="square-green" />
                                         </Grid>
-                                        <Grid className="t-align" item xs={10}>
+                                        <Grid className="t-align" item xs="10">
                                             <div className="legend-name">
                                                 SCA ({this.state.scaPercent}%)
                                             </div>
@@ -326,12 +348,12 @@ class AverageTransactionAmount extends Widget {
                                         </Grid>
                                     </Grid>
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid item xs="12">
                                     <Grid container>
-                                        <Grid item xs={2}>
+                                        <Grid item xs="2">
                                             <div className="square-blue" />
                                         </Grid>
-                                        <Grid className="t-align" item xs={10}>
+                                        <Grid className="t-align" item xs="10">
                                             <div className="legend-name">
                                                 EXEMPTED ({this.state.exemptPercent}%)
                                             </div>
@@ -356,7 +378,7 @@ class AverageTransactionAmount extends Widget {
                     <h2 className="drill-down-title">
                         EXEMPTED
                     </h2>
-                    <div style={{ margin: '20px' }}>
+                    <div style={{ margin: '20' }}>
                         <VizG
                             config={this.drillDownTableConfig}
                             metadata={this.drillDownMetadata}
